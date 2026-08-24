@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>ANCHOR – The Breathing Labyrinth</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      body {
+        background: #0b0b1a;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        touch-action: none;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      #gameCanvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle at center, #141432, #070712);
+        cursor: none;
+        touch-action: none;
+      }
+      /* ---- OVERLAY / START SCREEN ---- */
+      #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(8, 8, 20, 0.85);
+        backdrop-filter: blur(12px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        padding: 2rem;
+        text-align: center;
+        transition: opacity 0.8s ease;
+      }
+      #overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #overlay h1 {
+        font-size: 3.2rem;
+        font-weight: 300;
+        color: #d4bfff;
+        letter-spacing: 0.15em;
+        text-shadow: 0 0 40px rgba(180, 130, 255, 0.3);
+        margin-bottom: 0.5rem;
+      }
+      #overlay p {
+        color: #9a8abf;
+        font-size: 1.1rem;
+        max-width: 320px;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        opacity: 0.8;
+      }
+      #overlay .sub {
+        font-size: 0.9rem;
+        color: #6b5b8a;
+        margin-bottom: 2rem;
+      }
+      #startBtn {
+        background: none;
+        border: 1.5px solid #a58bdf;
+        color: #d4bfff;
+        padding: 1rem 3.5rem;
+        font-size: 1.3rem;
+        border-radius: 60px;
+        letter-spacing: 0.1em;
+        background: rgba(165, 139, 223, 0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      #startBtn:active {
+        transform: scale(0.94);
+        background: rgba(165, 139, 223, 0.2);
+      }
+      #statusMsg {
+        position: fixed;
+        bottom: 30px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        color: #6f5e94;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        pointer-events: none;
+        z-index: 10;
+        font-weight: 300;
+        transition: opacity 0.5s;
+      }
+      #winCounter {
+        position: fixed;
+        top: 20px;
+        right: 24px;
+        color: #4b3d63;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        z-index: 10;
+        font-weight: 300;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 6px 14px;
+        border-radius: 30px;
+        backdrop-filter: blur(4px);
+      }
+      /* Mandala overlay (win screen) */
+      #mandalaOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(8, 8, 20, 0.92);
+        backdrop-filter: blur(6px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 200;
+        padding: 1.5rem;
+      }
+      #mandalaOverlay.show {
+        display: flex;
+      }
+      #mandalaCanvas {
+        width: 80vmin;
+        height: 80vmin;
+        border-radius: 50%;
+        box-shadow: 0 0 80px rgba(165, 139, 223, 0.2);
+        background: #0b0b1a;
+      }
+      #mandalaOverlay h2 {
+        color: #d4bfff;
+        font-weight: 300;
+        margin-top: 1.5rem;
+        font-size: 1.6rem;
+        letter-spacing: 0.1em;
+      }
+      #mandalaOverlay p {
+        color: #8a7aa8;
+        margin: 0.3rem 0 1.2rem;
+      }
+      #resetBtn {
+        background: none;
+        border: 1px solid #6b5b8a;
+        color: #b3a0d6;
+        padding: 0.7rem 2.5rem;
+        border-radius: 40px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: 0.2s;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      #resetBtn:active {
+        background: rgba(165, 139, 223, 0.15);
+        transform: scale(0.95);
+      }
+      @media (max-width: 480px) {
+        #overlay h1 {
+          font-size: 2.4rem;
+        }
+        #overlay p {
+          font-size: 1rem;
+        }
+        #startBtn {
+          padding: 0.8rem 2.5rem;
+          font-size: 1.1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- START OVERLAY -->
+    <div id="overlay">
+      <h1>⚓ ANCHOR</h1>
+      <p>
+        Tilt your phone to guide the light.<br />Blow gently to move forward.<br />Shake?
+        The walls will widen.
+      </p>
+      <div class="sub">no thoughts. just movement.</div>
+      <button id="startBtn">begin the labyrinth</button>
+    </div>
+
+    <!-- MAIN GAME -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI -->
+    <div id="winCounter">⏳ anchored · <span id="winCountDisplay">0</span></div>
+    <div id="statusMsg">↕ tilt · 🌬️ blow · 🌀 trust</div>
+
+    <!-- MANDALA OVERLAY -->
+    <div id="mandalaOverlay">
+      <canvas id="mandalaCanvas"></canvas>
+      <h2>✦ your anchor mandala ✦</h2>
+      <p>this path is yours alone</p>
+      <button id="resetBtn">↺ walk the labyrinth again</button>
+    </div>
+
+    <script>
+      // --------------------------------------------------------------
+      // 1. SETUP CANVAS & CONTEXT
+      // --------------------------------------------------------------
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      let W, H;
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resize);
+      resize();
+
+      // --------------------------------------------------------------
+      // 2. MAZE GENERATION (DFS)
+      // --------------------------------------------------------------
+      const COLS = 9;
+      const ROWS = 9;
+      let cellSize;
+      let maze = [];
+      let wallThickness = 3;
+
+      function initMaze() {
+        maze = [];
+        for (let r = 0; r < ROWS; r++) {
+          maze[r] = [];
+          for (let c = 0; c < COLS; c++) {
+            maze[r][c] = {
+              top: true,
+              right: true,
+              bottom: true,
+              left: true,
+              visited: false,
+            };
+          }
+        }
+        const stack = [];
+        const start = { r: 0, c: 0 };
+        maze[0][0].visited = true;
+        stack.push(start);
+
+        while (stack.length > 0) {
+          const cur = stack[stack.length - 1];
+          const { r, c } = cur;
+          const neighbors = [];
+          if (r > 0 && !maze[r - 1][c].visited)
+            neighbors.push({ r: r - 1, c, dir: "top" });
+          if (r < ROWS - 1 && !maze[r + 1][c].visited)
+            neighbors.push({ r: r + 1, c, dir: "bottom" });
+          if (c > 0 && !maze[r][c - 1].visited)
+            neighbors.push({ r, c: c - 1, dir: "left" });
+          if (c < COLS - 1 && !maze[r][c + 1].visited)
+            neighbors.push({ r, c: c + 1, dir: "right" });
+
+          if (neighbors.length === 0) {
+            stack.pop();
+          } else {
+            const next =
+              neighbors[Math.floor(Math.random() * neighbors.length)];
+            // remove wall between cur and next
+            if (next.dir === "top") {
+              maze[r][c].top = false;
+              maze[next.r][next.c].bottom = false;
+            }
+            if (next.dir === "bottom") {
+              maze[r][c].bottom = false;
+              maze[next.r][next.c].top = false;
+            }
+            if (next.dir === "left") {
+              maze[r][c].left = false;
+              maze[next.r][next.c].right = false;
+            }
+            if (next.dir === "right") {
+              maze[r][c].right = false;
+              maze[next.r][next.c].left = false;
+            }
+            maze[next.r][next.c].visited = true;
+            stack.push({ r: next.r, c: next.c });
+          }
+        }
+      }
+
+      // --------------------------------------------------------------
+      // 3. PLAYER / BALL STATE
+      // --------------------------------------------------------------
+      let ball = {
+        row: 0,
+        col: 0,
+        px: 0, // pixel x
+        py: 0, // pixel y
+        targetRow: 0,
+        targetCol: 0,
+        moving: false,
+      };
+
+      let path = []; // array of {x, y} pixel coords
+      let gameWon = false;
+
+      function resetGame() {
+        initMaze();
+        ball.row = 0;
+        ball.col = 0;
+        ball.targetRow = 0;
+        ball.targetCol = 0;
+        ball.px = getCellCenter(0, 0).x;
+        ball.py = getCellCenter(0, 0).y;
+        ball.moving = false;
+        path = [{ x: ball.px, y: ball.py }];
+        gameWon = false;
+        document.getElementById("mandalaOverlay").classList.remove("show");
+      }
+
+      function getCellCenter(col, row) {
+        const margin = cellSize * 0.5;
+        const x = margin + col * cellSize;
+        const y = margin + row * cellSize;
+        return { x, y };
+      }
+
+      // --------------------------------------------------------------
+      // 4. TILT (DeviceMotion) & SHAKE DETECTION
+      // --------------------------------------------------------------
+      let tiltX = 0; // -1 .. 1 (left/right)
+      let tiltY = 0; // -1 .. 1 (up/down)
+      let shakeIntensity = 0; // 0 .. 1
+      const shakeHistory = [];
+
+      function handleMotion(e) {
+        const acc = e.accelerationIncludingGravity;
+        if (!acc) return;
+        const mag = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+        shakeHistory.push(mag);
+        if (shakeHistory.length > 40) shakeHistory.shift();
+
+        // variance
+        if (shakeHistory.length > 10) {
+          const avg =
+            shakeHistory.reduce((a, b) => a + b, 0) / shakeHistory.length;
+          let variance =
+            shakeHistory.reduce((a, b) => a + (b - avg) ** 2, 0) /
+            shakeHistory.length;
+          // clamp & normalize (9.8 is gravity)
+          shakeIntensity = Math.min(1, variance / 25);
+        }
+
+        // tilt from beta/gamma
+        const beta = e.beta || 0; // -180..180 (front/back)
+        const gamma = e.gamma || 0; // -90..90 (left/right)
+        // map to -1..1 with deadzone
+        let rawX = gamma / 40;
+        let rawY = beta / 40;
+        tiltX = Math.min(1, Math.max(-1, rawX));
+        tiltY = Math.min(1, Math.max(-1, rawY));
+        // small deadzone
+        if (Math.abs(tiltX) < 0.08) tiltX = 0;
+        if (Math.abs(tiltY) < 0.08) tiltY = 0;
+      }
+
+      // --------------------------------------------------------------
+      // 5. MICROPHONE (BLOW DETECTION)
+      // --------------------------------------------------------------
+      let blowForce = 0; // 0..1
+      let audioCtx = null;
+      let analyser = null;
+      let dataArray = null;
+
+      function initAudio() {
+        if (audioCtx) return;
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          navigator.mediaDevices
+            .getUserMedia({ audio: true, video: false })
+            .then((stream) => {
+              const source = audioCtx.createMediaStreamSource(stream);
+              analyser = audioCtx.createAnalyser();
+              analyser.fftSize = 256;
+              analyser.smoothingTimeConstant = 0.3;
+              source.connect(analyser);
+              dataArray = new Uint8Array(analyser.fftSize);
+            })
+            .catch((err) => {
+              console.warn("Mic not available:", err);
+              blowForce = 0;
+            });
+        } catch (e) {
+          console.warn("WebAudio not supported");
+        }
+      }
+
+      function updateBlow() {
+        if (!analyser || !dataArray) {
+          blowForce *= 0.9; // decay
+          return;
+        }
+        try {
+          analyser.getByteFrequencyData(dataArray);
+          // sum low frequencies (0-40 bins)
+          let sum = 0;
+          const bins = Math.min(40, dataArray.length);
+          for (let i = 0; i < bins; i++) sum += dataArray[i];
+          const avg = sum / bins;
+          // map: 15-70 -> 0..1
+          if (avg > 15) {
+            blowForce = Math.min(1, (avg - 15) / 55);
+          } else {
+            blowForce *= 0.95;
+          }
+        } catch (e) {
+          blowForce *= 0.95;
+        }
+      }
+
+      // --------------------------------------------------------------
+      // 6. GAME LOGIC UPDATE
+      // --------------------------------------------------------------
+      let stepCooldown = 0;
+
+      function updateGame() {
+        if (gameWon) return;
+
+        // ---- A. Shake -> widen corridors ----
+        const dynamicCellSize = cellSize * (1 + shakeIntensity * 0.5); // up to 50% wider
+        // we don't resize maze, we just draw walls thinner, effectively widening passages.
+        // We'll store wallThickness = 3 + (1 - shakeIntensity) * 3? Actually thinner walls = wider path.
+        // We want walls to get THINNER when shaking, so:
+        const baseThick = 3;
+        const maxThick = 8;
+        wallThickness = Math.max(baseThick, maxThick - shakeIntensity * 6);
+        // also make ball slightly bigger when shaking to feel more grounded
+        // but we keep ball size constant.
+
+        // ---- B. Tilt + Blow -> move ball ----
+        const moveSpeed = 0.12 + blowForce * 0.12; // blow makes it faster
+        const threshold = 0.25;
+
+        // try to move in the direction of tilt
+        let dr = 0,
+          dc = 0;
+        if (Math.abs(tiltX) > threshold) {
+          dc = tiltX > 0 ? 1 : -1;
+        }
+        if (Math.abs(tiltY) > threshold) {
+          dr = tiltY > 0 ? 1 : -1;
+        }
+
+        // prefer horizontal if both axes active (prevents diagonal jitter)
+        if (dc !== 0 && dr !== 0) {
+          if (Math.abs(tiltX) > Math.abs(tiltY)) dr = 0;
+          else dc = 0;
+        }
+
+        if ((dc !== 0 || dr !== 0) && stepCooldown <= 0) {
+          const newR = ball.row + dr;
+          const newC = ball.col + dc;
+          if (newR >= 0 && newR < ROWS && newC >= 0 && newC < COLS) {
+            // check wall
+            let blocked = false;
+            if (dr === -1 && maze[ball.row][ball.col].top) blocked = true;
+            if (dr === 1 && maze[ball.row][ball.col].bottom) blocked = true;
+            if (dc === -1 && maze[ball.row][ball.col].left) blocked = true;
+            if (dc === 1 && maze[ball.row][ball.col].right) blocked = true;
+            if (!blocked) {
+              ball.row = newR;
+              ball.col = newC;
+              ball.targetRow = newR;
+              ball.targetCol = newC;
+              ball.moving = true;
+              // record path
+              const center = getCellCenter(ball.col, ball.row);
+              path.push({ x: center.x, y: center.y });
+              stepCooldown = 10; // frames
+              // check win
+              if (ball.row === ROWS - 1 && ball.col === COLS - 1) {
+                winGame();
+              }
+            }
+          }
+        }
+        if (stepCooldown > 0) stepCooldown--;
+
+        // ---- C. Smooth pixel interpolation ----
+        const target = getCellCenter(ball.col, ball.row);
+        const lerpFactor = 0.2 + blowForce * 0.15;
+        ball.px += (target.x - ball.px) * lerpFactor;
+        ball.py += (target.y - ball.py) * lerpFactor;
+        if (
+          Math.abs(ball.px - target.x) < 0.5 &&
+          Math.abs(ball.py - target.y) < 0.5
+        ) {
+          ball.px = target.x;
+          ball.py = target.y;
+          ball.moving = false;
+        }
+
+        // update blow for next frame
+        updateBlow();
+      }
+
+      // --------------------------------------------------------------
+      // 7. DRAWING
+      // --------------------------------------------------------------
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+
+        // ---- A. Draw Maze ----
+        const margin = cellSize * 0.5;
+        ctx.strokeStyle = "#3a2f5a";
+        ctx.lineWidth = wallThickness;
+        ctx.shadowColor = "rgba(165, 139, 223, 0.15)";
+        ctx.shadowBlur = 10;
+
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const x = margin + c * cellSize;
+            const y = margin + r * cellSize;
+            const cell = maze[r][c];
+            // top wall
+            if (cell.top) {
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x + cellSize, y);
+              ctx.stroke();
+            }
+            // right wall
+            if (cell.right) {
+              ctx.beginPath();
+              ctx.moveTo(x + cellSize, y);
+              ctx.lineTo(x + cellSize, y + cellSize);
+              ctx.stroke();
+            }
+            // bottom
+            if (cell.bottom) {
+              ctx.beginPath();
+              ctx.moveTo(x, y + cellSize);
+              ctx.lineTo(x + cellSize, y + cellSize);
+              ctx.stroke();
+            }
+            // left
+            if (cell.left) {
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x, y + cellSize);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // ---- B. Draw Path Trace (glowing) ----
+        if (path.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(path[0].x, path[0].y);
+          for (let i = 1; i < path.length; i++) {
+            ctx.lineTo(path[i].x, path[i].y);
+          }
+          ctx.strokeStyle = "rgba(165, 139, 223, 0.35)";
+          ctx.lineWidth = 6;
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = "rgba(165, 139, 223, 0.4)";
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+
+        // ---- C. Draw Goal (bottom-right) ----
+        const goal = getCellCenter(COLS - 1, ROWS - 1);
+        ctx.beginPath();
+        ctx.arc(goal.x, goal.y, cellSize * 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(100, 220, 180, 0.2)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(100, 220, 180, 0.6)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // ---- D. Draw Ball ----
+        const radius = cellSize * 0.2 + shakeIntensity * 3;
+        const grad = ctx.createRadialGradient(
+          ball.px - radius * 0.3,
+          ball.py - radius * 0.3,
+          2,
+          ball.px,
+          ball.py,
+          radius,
+        );
+        grad.addColorStop(0, "#e8ddff");
+        grad.addColorStop(0.6, "#b397f0");
+        grad.addColorStop(1, "#6b4f9e");
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = "rgba(165, 139, 223, 0.6)";
+        ctx.beginPath();
+        ctx.arc(ball.px, ball.py, radius, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // ---- E. Breath / Blow indicator ----
+        if (blowForce > 0.1) {
+          ctx.beginPath();
+          ctx.arc(
+            ball.px,
+            ball.py - radius - 16,
+            6 + blowForce * 12,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fillStyle = `rgba(200, 230, 255, ${blowForce * 0.6})`;
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = "rgba(200, 230, 255, 0.5)";
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        // ---- F. Shake indicator ----
+        if (shakeIntensity > 0.3) {
+          ctx.fillStyle = `rgba(255, 200, 200, ${shakeIntensity * 0.15})`;
+          ctx.fillRect(0, 0, W, H);
+          // visual "widening" effect: draw faint expanding rings
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(
+              W / 2,
+              H / 2,
+              60 + i * 30 + shakeIntensity * 40,
+              0,
+              Math.PI * 2,
+            );
+            ctx.strokeStyle = `rgba(255, 180, 180, ${shakeIntensity * 0.1})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // --------------------------------------------------------------
+      // 8. WIN – MANDALA GENERATION
+      // --------------------------------------------------------------
+      function winGame() {
+        if (gameWon) return;
+        gameWon = true;
+        // update win counter
+        let count = parseInt(localStorage.getItem("anchorWins") || "0") + 1;
+        localStorage.setItem("anchorWins", count);
+        document.getElementById("winCountDisplay").textContent = count;
+
+        // Generate mandala from path
+        generateMandala();
+
+        // Show overlay
+        setTimeout(() => {
+          document.getElementById("mandalaOverlay").classList.add("show");
+        }, 400);
+      }
+
+      function generateMandala() {
+        const mCanvas = document.getElementById("mandalaCanvas");
+        const mCtx = mCanvas.getContext("2d");
+        const size = Math.min(
+          window.innerWidth * 0.8,
+          window.innerHeight * 0.8,
+          500,
+        );
+        mCanvas.width = size;
+        mCanvas.height = size;
+        mCanvas.style.width = size + "px";
+        mCanvas.style.height = size + "px";
+
+        const cx = size / 2,
+          cy = size / 2;
+        const scale = size / (cellSize * Math.max(ROWS, COLS) * 0.7);
+
+        mCtx.clearRect(0, 0, size, size);
+        mCtx.fillStyle = "#0b0b1a";
+        mCtx.fillRect(0, 0, size, size);
+
+        if (path.length < 2) return;
+
+        // 8-fold symmetry
+        const segments = 8;
+        const angleStep = (Math.PI * 2) / segments;
+
+        mCtx.lineWidth = 2.5;
+        mCtx.shadowBlur = 20;
+        mCtx.shadowColor = "rgba(165, 139, 223, 0.3)";
+
+        for (let s = 0; s < segments; s++) {
+          const angle = s * angleStep;
+          mCtx.save();
+          mCtx.translate(cx, cy);
+          mCtx.rotate(angle);
+          mCtx.scale(scale, scale);
+
+          mCtx.beginPath();
+          // offset path to center around (0,0) relative to ball start
+          const startX = path[0].x - cellSize * 0.5;
+          const startY = path[0].y - cellSize * 0.5;
+          const relX = path[0].x - startX;
+          const relY = path[0].y - startY;
+          mCtx.moveTo(
+            relX - (cellSize * COLS) / 2,
+            relY - (cellSize * ROWS) / 2,
+          );
+
+          for (let i = 1; i < path.length; i++) {
+            const rx = path[i].x - startX - (cellSize * COLS) / 2;
+            const ry = path[i].y - startY - (cellSize * ROWS) / 2;
+            mCtx.lineTo(rx, ry);
+          }
+          mCtx.strokeStyle = `hsla(${260 + s * 15}, 70%, 70%, 0.6)`;
+          mCtx.stroke();
+
+          // mirror (negative scale)
+          mCtx.beginPath();
+          mCtx.moveTo(
+            -(path[0].x - startX) + (cellSize * COLS) / 2,
+            path[0].y - startY - (cellSize * ROWS) / 2,
+          );
+          for (let i = 1; i < path.length; i++) {
+            const rx = -(path[i].x - startX) + (cellSize * COLS) / 2;
+            const ry = path[i].y - startY - (cellSize * ROWS) / 2;
+            mCtx.lineTo(rx, ry);
+          }
+          mCtx.strokeStyle = `hsla(${280 + s * 12}, 60%, 60%, 0.4)`;
+          mCtx.stroke();
+
+          mCtx.restore();
+        }
+
+        // center dot
+        mCtx.beginPath();
+        mCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+        mCtx.fillStyle = "#d4bfff";
+        mCtx.shadowBlur = 30;
+        mCtx.fill();
+        mCtx.shadowBlur = 0;
+      }
+
+      // --------------------------------------------------------------
+      // 9. GAME LOOP
+      // --------------------------------------------------------------
+      function gameLoop() {
+        if (!gameWon) {
+          updateGame();
+        }
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // --------------------------------------------------------------
+      // 10. INIT & PERMISSIONS
+      // --------------------------------------------------------------
+      function init() {
+        resize();
+        cellSize = Math.min(W, H) / (Math.max(ROWS, COLS) + 1.5);
+        resetGame();
+        // start loop
+        gameLoop();
+
+        // Request permissions on button click
+        document
+          .getElementById("startBtn")
+          .addEventListener("click", async () => {
+            // Motion
+            if (
+              typeof DeviceMotionEvent !== "undefined" &&
+              typeof DeviceMotionEvent.requestPermission === "function"
+            ) {
+              try {
+                const response = await DeviceMotionEvent.requestPermission();
+                if (response === "granted") {
+                  window.addEventListener("devicemotion", handleMotion);
+                }
+              } catch (e) {
+                console.warn("Motion permission denied");
+              }
+            } else {
+              window.addEventListener("devicemotion", handleMotion);
+            }
+
+            // Audio
+            initAudio();
+
+            // Hide overlay
+            document.getElementById("overlay").classList.add("hidden");
+            // start audio context on user gesture
+            if (audioCtx && audioCtx.state === "suspended") {
+              await audioCtx.resume();
+            }
+            // update win counter
+            document.getElementById("winCountDisplay").textContent = parseInt(
+              localStorage.getItem("anchorWins") || "0",
+            );
+          });
+
+        // Reset button
+        document.getElementById("resetBtn").addEventListener("click", () => {
+          document.getElementById("mandalaOverlay").classList.remove("show");
+          resetGame();
+        });
+
+        // Desktop fallback: arrow keys
+        document.addEventListener("keydown", (e) => {
+          if (gameWon) return;
+          let dc = 0,
+            dr = 0;
+          if (e.key === "ArrowRight") dc = 1;
+          if (e.key === "ArrowLeft") dc = -1;
+          if (e.key === "ArrowDown") dr = 1;
+          if (e.key === "ArrowUp") dr = -1;
+          if (dc !== 0 || dr !== 0) {
+            e.preventDefault();
+            // temporarily set tilt to move
+            tiltX = dc;
+            tiltY = dr;
+            // reset after a tick (handled in update)
+            setTimeout(() => {
+              if (!gameWon) {
+                tiltX = 0;
+                tiltY = 0;
+              }
+            }, 100);
+          }
+        });
+      }
+
+      // Start when DOM ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    </script>
+  </body>
+</html>
