@@ -259,7 +259,7 @@
     <div class="card">
       <h2>⚓ How it works</h2>
       <ul>
-        <li>📱 <b>Tilt</b> your phone (gravity steers the ball).</li>
+        <li>📱 <b>Tilt</b> your phone (gravity steers the blue ball).</li>
         <li>🌬️ <b>Blow gently</b> – the ball moves forward on its own!</li>
         <li>🌀 <b>Shaking</b> makes the walls <b>widen</b> so you never get stuck.</li>
         <li>✨ Reach the <b>green glow</b> to create your calming mandala.</li>
@@ -304,7 +304,7 @@
     const COLS = 9, ROWS = 9;
     let cellSize;
     let maze = [];
-    let wallThickness = 3; // THIN walls = WIDE corridors
+    let wallThickness = 3; 
 
     function initMaze() {
       maze = [];
@@ -363,7 +363,7 @@
     }
 
     // --------------------------------------------------------------
-    // 4. SENSORS (REWRITTEN: PURE GRAVITY TILT!)
+    // 4. SENSORS (PURE GRAVITY TILT - NO DEBUG DOT!)
     // --------------------------------------------------------------
     let tiltX = 0; // -1 (left) to 1 (right)
     let tiltY = 0; // -1 (up) to 1 (down)
@@ -377,20 +377,16 @@
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
 
-      // 1. TILT: Divide raw gravity by 9.8 to get a -1..1 value.
-      // If you tilt right, gravity x becomes positive -> ball moves right.
-      // If you tilt forward (top of phone away), gravity y becomes negative. 
-      // We multiply by -1 so tilting forward moves the ball DOWN the screen.
+      // 1. TILT: Raw gravity mapped to -1..1
       let rawX = acc.x / 9.8;
       let rawY = -acc.y / 9.8; // Inverted so forward tilt = positive Y (down).
 
-      // Clamp to -1..1
       rawX = Math.min(1, Math.max(-1, rawX));
       rawY = Math.min(1, Math.max(-1, rawY));
 
-      // Deadzone (ignore micro-jitters)
-      if (Math.abs(rawX) < 0.08) rawX = 0;
-      if (Math.abs(rawY) < 0.08) rawY = 0;
+      // EXTRA SENSITIVE: Deadzone lowered to 0.05 so it catches the smallest tilt
+      if (Math.abs(rawX) < 0.05) rawX = 0;
+      if (Math.abs(rawY) < 0.05) rawY = 0;
 
       tiltX = rawX;
       tiltY = rawY;
@@ -438,18 +434,19 @@
     }
 
     // --------------------------------------------------------------
-    // 5. GAME LOGIC
+    // 5. GAME LOGIC (RESPONSIVE TILT)
     // --------------------------------------------------------------
     function updateGame() {
       if (gameWon) return;
 
-      // Shake -> Thin walls (wider passages)
+      // Shake -> Thin walls
       wallThickness = Math.max(1.5, 3 - shakeIntensity * 3);
 
       let dr = 0, dc = 0;
-      const threshold = 0.12;
+      // Lower threshold = More sensitive to tilt
+      const threshold = 0.08; 
 
-      // 1. Read Tilt (Gravity-based)
+      // 1. Read Tilt
       if (Math.abs(tiltX) > threshold) dc = tiltX > 0 ? 1 : -1;
       if (Math.abs(tiltY) > threshold) dr = tiltY > 0 ? 1 : -1;
 
@@ -460,7 +457,8 @@
         else if (ball.col < COLS - 1) dc = 1;
       }
 
-      const moveDelay = isBlowing ? 3 : 8; // Faster when blowing
+      // Blowing makes movement faster (lower cooldown)
+      const moveDelay = isBlowing ? 3 : 7; 
 
       if ((dc !== 0 || dr !== 0) && stepCooldown <= 0) {
         const newR = ball.row + dr, newC = ball.col + dc;
@@ -483,46 +481,30 @@
       }
       if (stepCooldown > 0) stepCooldown--;
 
-      // SNAP to center (No lerp jitter - instantly centering visually)
+      // Smooth centering (ball snaps perfectly to the middle of the path)
       const target = getCellCenter(ball.col, ball.row);
-      // Fast lerp, but snap if close enough
-      ball.px += (target.x - ball.px) * 0.3;
-      ball.py += (target.y - ball.py) * 0.3;
-      if (Math.abs(ball.px - target.x) < 1) ball.px = target.x;
-      if (Math.abs(ball.py - target.y) < 1) ball.py = target.y;
+      ball.px += (target.x - ball.px) * 0.25;
+      ball.py += (target.y - ball.py) * 0.25;
+      if (Math.abs(ball.px - target.x) < 0.5) ball.px = target.x;
+      if (Math.abs(ball.py - target.y) < 0.5) ball.py = target.y;
 
       // Status updates
       const status = document.getElementById('statusMsg');
       if (isBlowing && dc === 0 && dr === 0) status.innerText = '🌬️ blowing forward towards the light...';
       else if (shakeIntensity > 0.4) status.innerText = '🌀 shaking · walls widening for you';
-      else if (Math.abs(tiltX) > 0.3 || Math.abs(tiltY) > 0.3) status.innerText = '📱 tilting to navigate';
+      else if (Math.abs(tiltX) > 0.2 || Math.abs(tiltY) > 0.2) status.innerText = '📱 tilting to navigate';
       else if (!isBlowing) status.innerText = '🌬️ blow gently to move · 📱 tilt to steer';
 
       updateBlow();
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (Ball centered, plus TILT DEBUG DOT)
+    // 6. DRAWING (ONLY ONE BALL - THE BLUE ONE!)
     // --------------------------------------------------------------
     function draw() {
-      // Solid warm background
+      // Warm background
       ctx.fillStyle = '#fdf8f5';
       ctx.fillRect(0, 0, W, H);
-
-      // --- TILT DEBUG VISUALIZER (Top Left Corner) ---
-      // Shows you if your tilt is being detected. This dot moves when you tilt!
-      const debugX = 50 + tiltX * 30;
-      const debugY = 50 + tiltY * 30;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(184, 90, 64, 0.3)';
-      ctx.beginPath();
-      ctx.arc(debugX, debugY, 10, 0, Math.PI * 2);
-      ctx.fillStyle = '#b85a40';
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = 'rgba(42, 92, 122, 0.3)';
-      ctx.font = '10px sans-serif';
-      ctx.fillText('TILT', 30, 30);
 
       // --- Draw Maze (Terracotta) ---
       const margin = cellSize * 0.5;
@@ -544,7 +526,7 @@
       }
       ctx.shadowBlur = 0;
 
-      // --- Path Trace ---
+      // --- Path Trace (Warm coral) ---
       if (path.length > 1) {
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
@@ -571,16 +553,15 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // --- Ball (Tiny & PERFECTLY CENTERED) ---
-      // Radius is small so it never touches the walls visually
-      const radius = cellSize * 0.13 + shakeIntensity * 1;
+      // --- THE ONLY BALL (Ocean Blue, perfectly centered) ---
+      const radius = cellSize * 0.15 + shakeIntensity * 1;
       
-      // Huge outer glow to make it visible
+      // Soft aura
       const glowGrad = ctx.createRadialGradient(
         ball.px, ball.py, 0,
         ball.px, ball.py, radius * 3
       );
-      glowGrad.addColorStop(0, 'rgba(42, 92, 122, 0.15)');
+      glowGrad.addColorStop(0, 'rgba(42, 92, 122, 0.12)');
       glowGrad.addColorStop(1, 'rgba(42, 92, 122, 0)');
       ctx.shadowBlur = 0;
       ctx.beginPath();
@@ -588,7 +569,7 @@
       ctx.fillStyle = glowGrad;
       ctx.fill();
 
-      // Main ball (Ocean Blue)
+      // Main ball
       const ballGrad = ctx.createRadialGradient(
         ball.px - radius*0.3, ball.py - radius*0.3, 2,
         ball.px, ball.py, radius
@@ -703,7 +684,7 @@
 
       // Start Button -> Permissions
       document.getElementById('startBtn').addEventListener('click', async () => {
-        // 1. MOTION PERMISSION (Handles both Tilt and Shake)
+        // 1. MOTION PERMISSION (Tilt & Shake)
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             const response = await DeviceMotionEvent.requestPermission();
