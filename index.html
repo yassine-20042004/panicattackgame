@@ -259,7 +259,7 @@
     <div class="card">
       <h2>⚓ How it works</h2>
       <ul>
-        <li>📱 <b>Tilt</b> your phone left/right/up/down to steer.</li>
+        <li>📱 <b>Tilt</b> your phone (gravity steers the ball).</li>
         <li>🌬️ <b>Blow gently</b> – the ball moves forward on its own!</li>
         <li>🌀 <b>Shaking</b> makes the walls <b>widen</b> so you never get stuck.</li>
         <li>✨ Reach the <b>green glow</b> to create your calming mandala.</li>
@@ -304,7 +304,7 @@
     const COLS = 9, ROWS = 9;
     let cellSize;
     let maze = [];
-    let wallThickness = 4;
+    let wallThickness = 3; // THIN walls = WIDE corridors
 
     function initMaze() {
       maze = [];
@@ -363,43 +363,39 @@
     }
 
     // --------------------------------------------------------------
-    // 4. SENSORS (FIXED TILT USING deviceorientation)
+    // 4. SENSORS (REWRITTEN: PURE GRAVITY TILT!)
     // --------------------------------------------------------------
     let tiltX = 0; // -1 (left) to 1 (right)
-    let tiltY = 0; // -1 (down/forward) to 1 (up/back)
+    let tiltY = 0; // -1 (up) to 1 (down)
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
     let audioCtx = null, analyser = null, dataArray = null;
 
-    // --- A. TILT (Using Device Orientation - WORKS PERFECTLY) ---
-    function handleOrientation(e) {
-      // gamma: left/right tilt (-90 to 90). 
-      // beta: front/back tilt (-180 to 180). We normalize so 90 degrees (upright) = neutral 0.
-      let gamma = e.gamma || 0;
-      let beta = e.beta || 0;
+    // --- A. TILT & SHAKE (Using DeviceMotion Gravity) ---
+    function handleMotion(e) {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
 
-      // Map gamma (-90..90) to (-1..1). 45 degrees = full speed.
-      let rawX = gamma / 45;
-      // Map beta: 90 is upright (neutral). Tilt forward decreases beta, backward increases.
-      let rawY = (beta - 90) / 45;
+      // 1. TILT: Divide raw gravity by 9.8 to get a -1..1 value.
+      // If you tilt right, gravity x becomes positive -> ball moves right.
+      // If you tilt forward (top of phone away), gravity y becomes negative. 
+      // We multiply by -1 so tilting forward moves the ball DOWN the screen.
+      let rawX = acc.x / 9.8;
+      let rawY = -acc.y / 9.8; // Inverted so forward tilt = positive Y (down).
 
-      // Clamp
+      // Clamp to -1..1
       rawX = Math.min(1, Math.max(-1, rawX));
       rawY = Math.min(1, Math.max(-1, rawY));
 
-      // Deadzone (ignore tiny accidental tilts)
+      // Deadzone (ignore micro-jitters)
       if (Math.abs(rawX) < 0.08) rawX = 0;
       if (Math.abs(rawY) < 0.08) rawY = 0;
 
       tiltX = rawX;
       tiltY = rawY;
-    }
 
-    // --- B. SHAKE (Using Device Motion) ---
-    function handleMotion(e) {
-      const acc = e.accelerationIncludingGravity;
-      if (!acc) return;
+      // 2. SHAKE: Variance of total acceleration
       const mag = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
       shakeHistory.push(mag);
       if (shakeHistory.length > 40) shakeHistory.shift();
@@ -410,7 +406,7 @@
       }
     }
 
-    // --- C. MIC (Blow) ---
+    // --- B. MIC (Blow) ---
     function initAudio() {
       if (audioCtx) return;
       try {
@@ -448,12 +444,12 @@
       if (gameWon) return;
 
       // Shake -> Thin walls (wider passages)
-      wallThickness = Math.max(2, 4 - shakeIntensity * 4);
+      wallThickness = Math.max(1.5, 3 - shakeIntensity * 3);
 
       let dr = 0, dc = 0;
-      const threshold = 0.15;
+      const threshold = 0.12;
 
-      // 1. Read Tilt (NOW USING THE ORIENTATION EVENT)
+      // 1. Read Tilt (Gravity-based)
       if (Math.abs(tiltX) > threshold) dc = tiltX > 0 ? 1 : -1;
       if (Math.abs(tiltY) > threshold) dr = tiltY > 0 ? 1 : -1;
 
@@ -464,7 +460,7 @@
         else if (ball.col < COLS - 1) dc = 1;
       }
 
-      const moveDelay = isBlowing ? 4 : 10;
+      const moveDelay = isBlowing ? 3 : 8; // Faster when blowing
 
       if ((dc !== 0 || dr !== 0) && stepCooldown <= 0) {
         const newR = ball.row + dr, newC = ball.col + dc;
@@ -487,13 +483,13 @@
       }
       if (stepCooldown > 0) stepCooldown--;
 
-      // Smooth follow
+      // SNAP to center (No lerp jitter - instantly centering visually)
       const target = getCellCenter(ball.col, ball.row);
-      const lerp = 0.2 + blowForce * 0.15;
-      ball.px += (target.x - ball.px) * lerp;
-      ball.py += (target.y - ball.py) * lerp;
-      if (Math.abs(ball.px - target.x) < 0.3) ball.px = target.x;
-      if (Math.abs(ball.py - target.y) < 0.3) ball.py = target.y;
+      // Fast lerp, but snap if close enough
+      ball.px += (target.x - ball.px) * 0.3;
+      ball.py += (target.y - ball.py) * 0.3;
+      if (Math.abs(ball.px - target.x) < 1) ball.px = target.x;
+      if (Math.abs(ball.py - target.y) < 1) ball.py = target.y;
 
       // Status updates
       const status = document.getElementById('statusMsg');
@@ -506,17 +502,32 @@
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (BEAUTIFUL & VISIBLE)
+    // 6. DRAWING (Ball centered, plus TILT DEBUG DOT)
     // --------------------------------------------------------------
     function draw() {
       // Solid warm background
       ctx.fillStyle = '#fdf8f5';
       ctx.fillRect(0, 0, W, H);
 
+      // --- TILT DEBUG VISUALIZER (Top Left Corner) ---
+      // Shows you if your tilt is being detected. This dot moves when you tilt!
+      const debugX = 50 + tiltX * 30;
+      const debugY = 50 + tiltY * 30;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(184, 90, 64, 0.3)';
+      ctx.beginPath();
+      ctx.arc(debugX, debugY, 10, 0, Math.PI * 2);
+      ctx.fillStyle = '#b85a40';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(42, 92, 122, 0.3)';
+      ctx.font = '10px sans-serif';
+      ctx.fillText('TILT', 30, 30);
+
       // --- Draw Maze (Terracotta) ---
       const margin = cellSize * 0.5;
       ctx.strokeStyle = '#b85a40';
-      ctx.lineWidth = Math.max(2, wallThickness);
+      ctx.lineWidth = Math.max(1.5, wallThickness);
       ctx.shadowColor = 'rgba(184, 90, 64, 0.1)';
       ctx.shadowBlur = 5;
       ctx.lineCap = 'round';
@@ -538,10 +549,10 @@
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
         for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-        ctx.strokeStyle = 'rgba(224, 122, 95, 0.45)';
-        ctx.lineWidth = 8;
+        ctx.strokeStyle = 'rgba(224, 122, 95, 0.4)';
+        ctx.lineWidth = 6;
         ctx.shadowBlur = 20;
-        ctx.shadowColor = 'rgba(224, 122, 95, 0.2)';
+        ctx.shadowColor = 'rgba(224, 122, 95, 0.15)';
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -560,23 +571,24 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // --- Ball (Ocean Blue) ---
-      const radius = cellSize * 0.17 + shakeIntensity * 1.5;
+      // --- Ball (Tiny & PERFECTLY CENTERED) ---
+      // Radius is small so it never touches the walls visually
+      const radius = cellSize * 0.13 + shakeIntensity * 1;
       
-      // Outer glow
-      const grad = ctx.createRadialGradient(
-        ball.px - radius*0.2, ball.py - radius*0.2, 2,
-        ball.px, ball.py, radius + 4
+      // Huge outer glow to make it visible
+      const glowGrad = ctx.createRadialGradient(
+        ball.px, ball.py, 0,
+        ball.px, ball.py, radius * 3
       );
-      grad.addColorStop(0, 'rgba(42, 92, 122, 0.1)');
-      grad.addColorStop(1, 'rgba(42, 92, 122, 0)');
+      glowGrad.addColorStop(0, 'rgba(42, 92, 122, 0.15)');
+      glowGrad.addColorStop(1, 'rgba(42, 92, 122, 0)');
       ctx.shadowBlur = 0;
       ctx.beginPath();
-      ctx.arc(ball.px, ball.py, radius + 4, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.arc(ball.px, ball.py, radius * 3, 0, Math.PI * 2);
+      ctx.fillStyle = glowGrad;
       ctx.fill();
 
-      // Main ball
+      // Main ball (Ocean Blue)
       const ballGrad = ctx.createRadialGradient(
         ball.px - radius*0.3, ball.py - radius*0.3, 2,
         ball.px, ball.py, radius
@@ -584,18 +596,18 @@
       ballGrad.addColorStop(0, '#b4d9f0');
       ballGrad.addColorStop(0.5, '#2a5c7a');
       ballGrad.addColorStop(1, '#143545');
-      ctx.shadowBlur = 30;
+      ctx.shadowBlur = 25;
       ctx.shadowColor = 'rgba(42, 92, 122, 0.5)';
       ctx.beginPath();
       ctx.arc(ball.px, ball.py, radius, 0, Math.PI * 2);
       ctx.fillStyle = ballGrad;
       ctx.fill();
 
-      // --- Breath Effect ---
+      // --- Breath Rings ---
       if (blowForce > 0.1) {
         ctx.shadowBlur = 0;
         for (let i = 0; i < 3; i++) {
-          const r = radius + 10 + i * 8 + blowForce * 12;
+          const r = radius + 8 + i * 6 + blowForce * 12;
           ctx.beginPath();
           ctx.arc(ball.px, ball.py, r, 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(129, 178, 154, ${blowForce * 0.3})`;
@@ -675,7 +687,7 @@
     }
 
     // --------------------------------------------------------------
-    // 8. LOOP & INIT (PERMISSIONS FIXED)
+    // 8. LOOP & INIT
     // --------------------------------------------------------------
     function gameLoop() {
       if (!gameWon) updateGame();
@@ -691,31 +703,21 @@
 
       // Start Button -> Permissions
       document.getElementById('startBtn').addEventListener('click', async () => {
-        // 1. TILT PERMISSION (DeviceOrientation)
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            const response = await DeviceOrientationEvent.requestPermission();
-            if (response === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation);
-            }
-          } catch(e) { console.warn('Orientation permission denied'); }
-        } else {
-          window.addEventListener('deviceorientation', handleOrientation);
-        }
-
-        // 2. SHAKE PERMISSION (DeviceMotion)
+        // 1. MOTION PERMISSION (Handles both Tilt and Shake)
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             const response = await DeviceMotionEvent.requestPermission();
             if (response === 'granted') {
               window.addEventListener('devicemotion', handleMotion);
+            } else {
+              alert('Motion permission denied. Please allow motion sensors for tilt to work.');
             }
-          } catch(e) { console.warn('Motion permission denied'); }
+          } catch(e) { console.warn('Motion permission error:', e); }
         } else {
           window.addEventListener('devicemotion', handleMotion);
         }
 
-        // 3. MIC PERMISSION
+        // 2. MIC PERMISSION
         initAudio();
 
         // Hide overlay & resume audio
@@ -724,7 +726,7 @@
         document.getElementById('winCountDisplay').textContent = parseInt(localStorage.getItem('anchorWins') || '0');
       });
 
-      // Help
+      // Help Modal
       const helpBtn = document.getElementById('helpBtn');
       const helpModal = document.getElementById('helpModal');
       helpBtn.addEventListener('click', () => helpModal.classList.add('show'));
@@ -737,7 +739,7 @@
         resetGame();
       });
 
-      // Keyboard fallback (Desktop)
+      // Desktop Keyboard Fallback
       document.addEventListener('keydown', (e) => {
         if (gameWon) return;
         let dc=0, dr=0;
