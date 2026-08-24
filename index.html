@@ -259,7 +259,7 @@
     <div class="card">
       <h2>⚓ How it works</h2>
       <ul>
-        <li>📱 <b>Tilt</b> your phone to steer the ball.</li>
+        <li>📱 <b>Tilt</b> your phone left/right/up/down to steer.</li>
         <li>🌬️ <b>Blow gently</b> – the ball moves forward on its own!</li>
         <li>🌀 <b>Shaking</b> makes the walls <b>widen</b> so you never get stuck.</li>
         <li>✨ Reach the <b>green glow</b> to create your calming mandala.</li>
@@ -304,7 +304,7 @@
     const COLS = 9, ROWS = 9;
     let cellSize;
     let maze = [];
-    let wallThickness = 4; // THINNER WALLS = WIDER CORRIDORS
+    let wallThickness = 4;
 
     function initMaze() {
       maze = [];
@@ -363,35 +363,43 @@
     }
 
     // --------------------------------------------------------------
-    // 4. SENSORS (FIXED TILT USING GRAVITY!)
+    // 4. SENSORS (FIXED TILT USING deviceorientation)
     // --------------------------------------------------------------
-    let tiltX = 0, tiltY = 0;
+    let tiltX = 0; // -1 (left) to 1 (right)
+    let tiltY = 0; // -1 (down/forward) to 1 (up/back)
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
     let audioCtx = null, analyser = null, dataArray = null;
 
-    function handleMotion(e) {
-      const acc = e.accelerationIncludingGravity;
-      if (!acc) return;
+    // --- A. TILT (Using Device Orientation - WORKS PERFECTLY) ---
+    function handleOrientation(e) {
+      // gamma: left/right tilt (-90 to 90). 
+      // beta: front/back tilt (-180 to 180). We normalize so 90 degrees (upright) = neutral 0.
+      let gamma = e.gamma || 0;
+      let beta = e.beta || 0;
 
-      // --- 1. TILT DETECTION (Using Gravity Vector - Most Reliable) ---
-      // Divide by 9.8 to get values between -1 and 1
-      let rawX = acc.x / 9.8;
-      let rawY = acc.y / 9.8;
-      
-      // Clamp to prevent weird values over 1
+      // Map gamma (-90..90) to (-1..1). 45 degrees = full speed.
+      let rawX = gamma / 45;
+      // Map beta: 90 is upright (neutral). Tilt forward decreases beta, backward increases.
+      let rawY = (beta - 90) / 45;
+
+      // Clamp
       rawX = Math.min(1, Math.max(-1, rawX));
       rawY = Math.min(1, Math.max(-1, rawY));
 
-      // Deadzone (ignore tiny movements to prevent jitter)
+      // Deadzone (ignore tiny accidental tilts)
       if (Math.abs(rawX) < 0.08) rawX = 0;
       if (Math.abs(rawY) < 0.08) rawY = 0;
 
       tiltX = rawX;
       tiltY = rawY;
+    }
 
-      // --- 2. SHAKE DETECTION ---
+    // --- B. SHAKE (Using Device Motion) ---
+    function handleMotion(e) {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
       const mag = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
       shakeHistory.push(mag);
       if (shakeHistory.length > 40) shakeHistory.shift();
@@ -402,6 +410,7 @@
       }
     }
 
+    // --- C. MIC (Blow) ---
     function initAudio() {
       if (audioCtx) return;
       try {
@@ -444,11 +453,11 @@
       let dr = 0, dc = 0;
       const threshold = 0.15;
 
-      // 1. Read Tilt (FIXED: using gravity values)
+      // 1. Read Tilt (NOW USING THE ORIENTATION EVENT)
       if (Math.abs(tiltX) > threshold) dc = tiltX > 0 ? 1 : -1;
       if (Math.abs(tiltY) > threshold) dr = tiltY > 0 ? 1 : -1;
 
-      // 2. BLOW TO MOVE (AUTO-PILOT TOWARDS EXIT)
+      // 2. BLOW TO MOVE (Auto-pilot towards exit if no tilt)
       const isBlowing = blowForce > 0.25;
       if (isBlowing && dc === 0 && dr === 0) {
         if (ball.row < ROWS - 1) dr = 1;
@@ -497,7 +506,7 @@
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (BALL NOW CLEARLY IN THE PATH)
+    // 6. DRAWING (BEAUTIFUL & VISIBLE)
     // --------------------------------------------------------------
     function draw() {
       // Solid warm background
@@ -524,7 +533,7 @@
       }
       ctx.shadowBlur = 0;
 
-      // --- Path Trace (Warm coral) ---
+      // --- Path Trace ---
       if (path.length > 1) {
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
@@ -551,11 +560,10 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // --- Ball (Ocean Blue - SMALLER & CENTERED) ---
-      // Radius slightly smaller to ensure it sits beautifully between walls
+      // --- Ball (Ocean Blue) ---
       const radius = cellSize * 0.17 + shakeIntensity * 1.5;
       
-      // Outer glow to make it pop
+      // Outer glow
       const grad = ctx.createRadialGradient(
         ball.px - radius*0.2, ball.py - radius*0.2, 2,
         ball.px, ball.py, radius + 4
@@ -583,7 +591,7 @@
       ctx.fillStyle = ballGrad;
       ctx.fill();
 
-      // --- Breath Boost Effect ---
+      // --- Breath Effect ---
       if (blowForce > 0.1) {
         ctx.shadowBlur = 0;
         for (let i = 0; i < 3; i++) {
@@ -667,7 +675,7 @@
     }
 
     // --------------------------------------------------------------
-    // 8. LOOP & INIT
+    // 8. LOOP & INIT (PERMISSIONS FIXED)
     // --------------------------------------------------------------
     function gameLoop() {
       if (!gameWon) updateGame();
@@ -683,18 +691,34 @@
 
       // Start Button -> Permissions
       document.getElementById('startBtn').addEventListener('click', async () => {
-        // Motion (using DeviceMotion for gravity)
+        // 1. TILT PERMISSION (DeviceOrientation)
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try {
+            const response = await DeviceOrientationEvent.requestPermission();
+            if (response === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation);
+            }
+          } catch(e) { console.warn('Orientation permission denied'); }
+        } else {
+          window.addEventListener('deviceorientation', handleOrientation);
+        }
+
+        // 2. SHAKE PERMISSION (DeviceMotion)
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-          try { 
-            if (await DeviceMotionEvent.requestPermission() === 'granted') {
+          try {
+            const response = await DeviceMotionEvent.requestPermission();
+            if (response === 'granted') {
               window.addEventListener('devicemotion', handleMotion);
             }
-          } catch(e) { console.warn('Motion denied'); }
+          } catch(e) { console.warn('Motion permission denied'); }
         } else {
           window.addEventListener('devicemotion', handleMotion);
         }
-        // Audio
+
+        // 3. MIC PERMISSION
         initAudio();
+
+        // Hide overlay & resume audio
         document.getElementById('overlay').classList.add('hidden');
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         document.getElementById('winCountDisplay').textContent = parseInt(localStorage.getItem('anchorWins') || '0');
