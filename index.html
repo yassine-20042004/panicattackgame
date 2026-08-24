@@ -27,10 +27,10 @@
       display: block;
       width: 100vw;
       height: 100vh;
-      background: #fdf8f5; /* Solid fallback */
+      background: #fdf8f5;
       touch-action: none;
     }
-    /* ---- START OVERLAY (Colorful) ---- */
+    /* ---- START OVERLAY ---- */
     #overlay {
       position: fixed;
       top: 0;
@@ -304,7 +304,7 @@
     const COLS = 9, ROWS = 9;
     let cellSize;
     let maze = [];
-    let wallThickness = 6;
+    let wallThickness = 4; // THINNER WALLS = WIDER CORRIDORS
 
     function initMaze() {
       maze = [];
@@ -363,7 +363,7 @@
     }
 
     // --------------------------------------------------------------
-    // 4. SENSORS
+    // 4. SENSORS (FIXED TILT USING GRAVITY!)
     // --------------------------------------------------------------
     let tiltX = 0, tiltY = 0;
     let shakeIntensity = 0;
@@ -374,19 +374,32 @@
     function handleMotion(e) {
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
+
+      // --- 1. TILT DETECTION (Using Gravity Vector - Most Reliable) ---
+      // Divide by 9.8 to get values between -1 and 1
+      let rawX = acc.x / 9.8;
+      let rawY = acc.y / 9.8;
+      
+      // Clamp to prevent weird values over 1
+      rawX = Math.min(1, Math.max(-1, rawX));
+      rawY = Math.min(1, Math.max(-1, rawY));
+
+      // Deadzone (ignore tiny movements to prevent jitter)
+      if (Math.abs(rawX) < 0.08) rawX = 0;
+      if (Math.abs(rawY) < 0.08) rawY = 0;
+
+      tiltX = rawX;
+      tiltY = rawY;
+
+      // --- 2. SHAKE DETECTION ---
       const mag = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
       shakeHistory.push(mag);
       if (shakeHistory.length > 40) shakeHistory.shift();
       if (shakeHistory.length > 10) {
         const avg = shakeHistory.reduce((a,b) => a+b,0) / shakeHistory.length;
         let variance = shakeHistory.reduce((a,b) => a + (b-avg)**2,0) / shakeHistory.length;
-        shakeIntensity = Math.min(1, variance / 30);
+        shakeIntensity = Math.min(1, variance / 25);
       }
-      const beta = e.beta || 0, gamma = e.gamma || 0;
-      tiltX = Math.min(1, Math.max(-1, gamma / 35));
-      tiltY = Math.min(1, Math.max(-1, beta / 35));
-      if (Math.abs(tiltX) < 0.1) tiltX = 0;
-      if (Math.abs(tiltY) < 0.1) tiltY = 0;
     }
 
     function initAudio() {
@@ -420,18 +433,18 @@
     }
 
     // --------------------------------------------------------------
-    // 5. GAME LOGIC (BLOW = AUTO MOVE)
+    // 5. GAME LOGIC
     // --------------------------------------------------------------
     function updateGame() {
       if (gameWon) return;
 
       // Shake -> Thin walls (wider passages)
-      wallThickness = Math.max(2, 6 - shakeIntensity * 5);
+      wallThickness = Math.max(2, 4 - shakeIntensity * 4);
 
       let dr = 0, dc = 0;
-      const threshold = 0.2;
+      const threshold = 0.15;
 
-      // 1. Read Tilt
+      // 1. Read Tilt (FIXED: using gravity values)
       if (Math.abs(tiltX) > threshold) dc = tiltX > 0 ? 1 : -1;
       if (Math.abs(tiltY) > threshold) dr = tiltY > 0 ? 1 : -1;
 
@@ -484,19 +497,19 @@
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (GUARANTEED VISIBLE)
+    // 6. DRAWING (BALL NOW CLEARLY IN THE PATH)
     // --------------------------------------------------------------
     function draw() {
-      // --- SOLID BACKGROUND (No more transparency issues!) ---
-      ctx.fillStyle = '#fdf8f5'; // Warm cream
+      // Solid warm background
+      ctx.fillStyle = '#fdf8f5';
       ctx.fillRect(0, 0, W, H);
 
-      // --- Draw Maze (Rich Terracotta) ---
+      // --- Draw Maze (Terracotta) ---
       const margin = cellSize * 0.5;
-      ctx.strokeStyle = '#b85a40'; // Dark terracotta for high contrast
+      ctx.strokeStyle = '#b85a40';
       ctx.lineWidth = Math.max(2, wallThickness);
-      ctx.shadowColor = 'rgba(184, 90, 64, 0.15)';
-      ctx.shadowBlur = 6;
+      ctx.shadowColor = 'rgba(184, 90, 64, 0.1)';
+      ctx.shadowBlur = 5;
       ctx.lineCap = 'round';
 
       for (let r = 0; r < ROWS; r++) {
@@ -511,15 +524,15 @@
       }
       ctx.shadowBlur = 0;
 
-      // --- Path Trace (Warm coral glow) ---
+      // --- Path Trace (Warm coral) ---
       if (path.length > 1) {
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
         for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-        ctx.strokeStyle = 'rgba(224, 122, 95, 0.5)';
-        ctx.lineWidth = 10;
-        ctx.shadowBlur = 25;
-        ctx.shadowColor = 'rgba(224, 122, 95, 0.25)';
+        ctx.strokeStyle = 'rgba(224, 122, 95, 0.45)';
+        ctx.lineWidth = 8;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(224, 122, 95, 0.2)';
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -529,37 +542,52 @@
       ctx.shadowBlur = 40;
       ctx.shadowColor = 'rgba(129, 178, 154, 0.4)';
       ctx.beginPath();
-      ctx.arc(goal.x, goal.y, cellSize * 0.22, 0, Math.PI * 2);
+      ctx.arc(goal.x, goal.y, cellSize * 0.25, 0, Math.PI * 2);
       ctx.fillStyle = '#81b29a';
       ctx.fill();
-      // Inner bright dot
       ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(goal.x, goal.y, cellSize * 0.1, 0, Math.PI * 2);
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // --- Ball (Ocean Blue) ---
-      const radius = cellSize * 0.2 + shakeIntensity * 2;
+      // --- Ball (Ocean Blue - SMALLER & CENTERED) ---
+      // Radius slightly smaller to ensure it sits beautifully between walls
+      const radius = cellSize * 0.17 + shakeIntensity * 1.5;
+      
+      // Outer glow to make it pop
       const grad = ctx.createRadialGradient(
-        ball.px - radius*0.3, ball.py - radius*0.3, 2,
-        ball.px, ball.py, radius
+        ball.px - radius*0.2, ball.py - radius*0.2, 2,
+        ball.px, ball.py, radius + 4
       );
-      grad.addColorStop(0, '#8ab3d6');
-      grad.addColorStop(0.5, '#2a5c7a');
-      grad.addColorStop(1, '#143545');
-      ctx.shadowBlur = 35;
-      ctx.shadowColor = 'rgba(42, 92, 122, 0.5)';
+      grad.addColorStop(0, 'rgba(42, 92, 122, 0.1)');
+      grad.addColorStop(1, 'rgba(42, 92, 122, 0)');
+      ctx.shadowBlur = 0;
       ctx.beginPath();
-      ctx.arc(ball.px, ball.py, radius, 0, Math.PI * 2);
+      ctx.arc(ball.px, ball.py, radius + 4, 0, Math.PI * 2);
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // --- Breath effect (Expanding rings if blowing) ---
+      // Main ball
+      const ballGrad = ctx.createRadialGradient(
+        ball.px - radius*0.3, ball.py - radius*0.3, 2,
+        ball.px, ball.py, radius
+      );
+      ballGrad.addColorStop(0, '#b4d9f0');
+      ballGrad.addColorStop(0.5, '#2a5c7a');
+      ballGrad.addColorStop(1, '#143545');
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = 'rgba(42, 92, 122, 0.5)';
+      ctx.beginPath();
+      ctx.arc(ball.px, ball.py, radius, 0, Math.PI * 2);
+      ctx.fillStyle = ballGrad;
+      ctx.fill();
+
+      // --- Breath Boost Effect ---
       if (blowForce > 0.1) {
         ctx.shadowBlur = 0;
         for (let i = 0; i < 3; i++) {
-          const r = radius + 10 + i * 8 + blowForce * 15;
+          const r = radius + 10 + i * 8 + blowForce * 12;
           ctx.beginPath();
           ctx.arc(ball.px, ball.py, r, 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(129, 178, 154, ${blowForce * 0.3})`;
@@ -653,12 +681,19 @@
       resetGame();
       gameLoop();
 
-      // Start
+      // Start Button -> Permissions
       document.getElementById('startBtn').addEventListener('click', async () => {
+        // Motion (using DeviceMotion for gravity)
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-          try { if (await DeviceMotionEvent.requestPermission() === 'granted') window.addEventListener('devicemotion', handleMotion); } 
-          catch(e) { console.warn('Motion denied'); }
-        } else { window.addEventListener('devicemotion', handleMotion); }
+          try { 
+            if (await DeviceMotionEvent.requestPermission() === 'granted') {
+              window.addEventListener('devicemotion', handleMotion);
+            }
+          } catch(e) { console.warn('Motion denied'); }
+        } else {
+          window.addEventListener('devicemotion', handleMotion);
+        }
+        // Audio
         initAudio();
         document.getElementById('overlay').classList.add('hidden');
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
@@ -678,7 +713,7 @@
         resetGame();
       });
 
-      // Keyboard fallback
+      // Keyboard fallback (Desktop)
       document.addEventListener('keydown', (e) => {
         if (gameWon) return;
         let dc=0, dr=0;
@@ -689,7 +724,7 @@
         if (dc !== 0 || dr !== 0) {
           e.preventDefault();
           tiltX = dc; tiltY = dr;
-          setTimeout(() => { if (!gameWon) { tiltX = 0; tiltY = 0; } }, 120);
+          setTimeout(() => { if (!gameWon) { tiltX = 0; tiltY = 0; } }, 150);
         }
       });
     }
