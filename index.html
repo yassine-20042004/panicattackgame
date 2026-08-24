@@ -5,13 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Panic Attack Support – Anchor Labyrinth</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-touch-callout: none;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-touch-callout: none; }
     body {
       background: #fdf8f5;
       display: flex;
@@ -21,7 +15,7 @@
       width: 100vw;
       overflow: hidden;
       touch-action: none;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
     }
     #gameCanvas {
       display: block;
@@ -30,221 +24,123 @@
       background: #fdf8f5;
       touch-action: none;
     }
+    /* --- SENSOR DEBUG DISPLAY (Top Center - Small & Subtle) --- */
+    #sensorDebug {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 60;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(6px);
+      padding: 6px 18px;
+      border-radius: 40px;
+      border: 1px solid #e8ddd6;
+      color: #2a5c7a;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      font-family: 'Courier New', monospace;
+      pointer-events: none;
+    }
+    #sensorDebug span { color: #b85a40; margin: 0 4px; }
+    @media (max-width: 480px) { #sensorDebug { font-size: 0.6rem; padding: 4px 12px; } }
+    
     /* ---- START OVERLAY ---- */
     #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(253, 248, 245, 0.94);
-      backdrop-filter: blur(14px);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-      padding: 2rem;
-      text-align: center;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(253, 248, 245, 0.94); backdrop-filter: blur(14px);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 100; padding: 2rem; text-align: center;
       transition: opacity 0.6s ease;
     }
     #overlay.hidden { opacity: 0; pointer-events: none; }
-    #overlay h1 {
-      font-size: 2.8rem;
-      font-weight: 700;
-      color: #2a5c7a;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.3rem;
-    }
+    #overlay h1 { font-size: 2.8rem; font-weight: 700; color: #2a5c7a; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
     #overlay h1 span { color: #b85a40; }
-    #overlay .subtitle {
-      font-size: 1.1rem;
-      color: #5e7c7e;
-      max-width: 300px;
-      line-height: 1.5;
-      margin-bottom: 0.5rem;
-    }
+    #overlay .subtitle { font-size: 1.1rem; color: #5e7c7e; max-width: 300px; line-height: 1.5; margin-bottom: 0.5rem; }
     #overlay .feature-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.6rem 1.2rem;
-      margin: 1.5rem 0 2.5rem;
-      font-size: 0.9rem;
-      color: #3d5a5c;
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem 1.2rem;
+      margin: 1.5rem 0 2.5rem; font-size: 0.9rem; color: #3d5a5c;
     }
     #overlay .feature-grid span {
-      background: rgba(184, 90, 64, 0.08);
-      padding: 0.3rem 1rem;
-      border-radius: 30px;
-      border: 1px solid rgba(184, 90, 64, 0.15);
+      background: rgba(184, 90, 64, 0.08); padding: 0.3rem 1rem;
+      border-radius: 30px; border: 1px solid rgba(184, 90, 64, 0.15);
     }
     #startBtn {
-      background: #2a5c7a;
-      border: none;
-      color: white;
-      padding: 1rem 3.5rem;
-      font-size: 1.3rem;
-      border-radius: 60px;
-      font-weight: 600;
+      background: #2a5c7a; border: none; color: white; padding: 1rem 3.5rem;
+      font-size: 1.3rem; border-radius: 60px; font-weight: 600;
       box-shadow: 0 8px 25px rgba(42, 92, 122, 0.3);
-      cursor: pointer;
-      touch-action: manipulation;
-      transition: transform 0.15s;
+      cursor: pointer; touch-action: manipulation; transition: transform 0.15s;
     }
     #startBtn:active { transform: scale(0.94); }
     /* ---- HELP ---- */
     #helpBtn {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 50;
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(6px);
-      border: 1px solid #d6cbc4;
-      color: #2a5c7a;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      font-size: 1.4rem;
-      font-weight: 300;
-      cursor: pointer;
+      position: fixed; top: 20px; left: 20px; z-index: 50;
+      background: rgba(255,255,255,0.8); backdrop-filter: blur(6px);
+      border: 1px solid #d6cbc4; color: #2a5c7a;
+      width: 44px; height: 44px; border-radius: 50%;
+      font-size: 1.4rem; font-weight: 300; cursor: pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     }
     #helpBtn:active { transform: scale(0.9); }
     #helpModal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(45, 62, 64, 0.5);
-      backdrop-filter: blur(8px);
-      z-index: 300;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      padding: 2rem;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(45, 62, 64, 0.5); backdrop-filter: blur(8px);
+      z-index: 300; display: none; justify-content: center; align-items: center; padding: 2rem;
     }
     #helpModal.show { display: flex; }
     #helpModal .card {
-      background: #fdf8f5;
-      max-width: 380px;
-      padding: 2rem 1.8rem;
-      border-radius: 36px;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+      background: #fdf8f5; max-width: 380px; padding: 2rem 1.8rem;
+      border-radius: 36px; box-shadow: 0 30px 60px rgba(0,0,0,0.15);
       animation: popIn 0.2s ease;
     }
     @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     #helpModal h2 { color: #2a5c7a; font-weight: 600; margin-bottom: 0.2rem; }
-    #helpModal ul {
-      list-style: none;
-      padding: 0;
-      margin: 1rem 0 1.5rem;
-      text-align: left;
-    }
-    #helpModal ul li {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid rgba(0,0,0,0.04);
-      color: #2d3e40;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
+    #helpModal ul { list-style: none; padding: 0; margin: 1rem 0 1.5rem; text-align: left; }
+    #helpModal ul li { padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.04); color: #2d3e40; display: flex; align-items: center; gap: 0.6rem; }
     #helpModal ul li:last-child { border: none; }
-    #helpModal .closeHelp {
-      background: #b85a40;
-      border: none;
-      color: white;
-      padding: 0.7rem 2rem;
-      border-radius: 40px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 1rem;
-    }
+    #helpModal .closeHelp { background: #b85a40; border: none; color: white; padding: 0.7rem 2rem; border-radius: 40px; font-weight: 600; cursor: pointer; font-size: 1rem; }
     /* ---- UI BOTTOM ---- */
     #statusMsg {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      color: #4a686a;
-      font-size: 0.9rem;
-      letter-spacing: 0.04em;
-      pointer-events: none;
-      z-index: 10;
-      font-weight: 500;
-      background: rgba(253, 248, 245, 0.85);
-      backdrop-filter: blur(4px);
-      padding: 12px 0;
-      border-top: 1px solid rgba(184, 90, 64, 0.15);
+      position: fixed; bottom: 0; left: 0; width: 100%; text-align: center;
+      color: #4a686a; font-size: 0.9rem; letter-spacing: 0.04em; pointer-events: none;
+      z-index: 10; font-weight: 500;
+      background: rgba(253, 248, 245, 0.85); backdrop-filter: blur(4px);
+      padding: 12px 0; border-top: 1px solid rgba(184, 90, 64, 0.15);
     }
     #winCounter {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(6px);
-      padding: 6px 16px;
-      border-radius: 30px;
-      border: 1px solid #e8ddd6;
-      color: #2a5c7a;
-      font-size: 0.8rem;
-      z-index: 10;
-      font-weight: 600;
+      position: fixed; top: 20px; right: 20px;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
+      padding: 6px 16px; border-radius: 30px; border: 1px solid #e8ddd6;
+      color: #2a5c7a; font-size: 0.8rem; z-index: 10; font-weight: 600;
     }
-    /* ---- MANDALA OVERLAY ---- */
+    /* ---- MANDALA ---- */
     #mandalaOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(253, 248, 245, 0.95);
-      backdrop-filter: blur(8px);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 200;
-      padding: 1.5rem;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(253, 248, 245, 0.95); backdrop-filter: blur(8px);
+      display: none; justify-content: center; align-items: center; flex-direction: column;
+      z-index: 200; padding: 1.5rem;
     }
     #mandalaOverlay.show { display: flex; }
-    #mandalaCanvas {
-      width: 80vmin;
-      height: 80vmin;
-      border-radius: 50%;
-      box-shadow: 0 0 60px rgba(42, 92, 122, 0.15);
-      background: #fdf8f5;
-    }
+    #mandalaCanvas { width: 80vmin; height: 80vmin; border-radius: 50%; box-shadow: 0 0 60px rgba(42, 92, 122, 0.15); background: #fdf8f5; }
     #mandalaOverlay h2 { color: #2a5c7a; font-weight: 500; margin-top: 1.2rem; font-size: 1.5rem; }
     #mandalaOverlay p { color: #5e7c7e; margin: 0.2rem 0 1.2rem; }
-    #resetBtn {
-      background: #b85a40;
-      border: none;
-      color: white;
-      padding: 0.7rem 2.5rem;
-      border-radius: 40px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(184, 90, 64, 0.3);
-      transition: 0.15s;
-    }
+    #resetBtn { background: #b85a40; border: none; color: white; padding: 0.7rem 2.5rem; border-radius: 40px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgba(184, 90, 64, 0.3); transition: 0.15s; }
     #resetBtn:active { transform: scale(0.95); }
-    @media (max-width: 480px) {
-      #overlay h1 { font-size: 2.2rem; }
-      #overlay .feature-grid { gap: 0.4rem; font-size: 0.8rem; }
-    }
+    @media (max-width: 480px) { #overlay h1 { font-size: 2.2rem; } #overlay .feature-grid { gap: 0.4rem; font-size: 0.8rem; } }
   </style>
 </head>
 <body>
 
+  <!-- SENSOR DEBUG DISPLAY (This tells us if your phone is listening) -->
+  <div id="sensorDebug">📡 Tilt: <span id="debugTilt">0.00</span> , <span id="debugTiltY">0.00</span> | Blow: <span id="debugBlow">0</span>%</div>
+
   <!-- START OVERLAY -->
   <div id="overlay">
     <h1>🧘 <span>Panic</span> Attack Support</h1>
-    <div class="subtitle">A colorful labyrinth that responds to your breath.</div>
+    <div class="subtitle">Tilt your phone. Blow gently. The labyrinth listens.</div>
     <div class="feature-grid">
       <span>📱 Tilt to steer</span>
       <span>🌬️ Blow to move</span>
@@ -259,10 +155,10 @@
     <div class="card">
       <h2>⚓ How it works</h2>
       <ul>
-        <li>📱 <b>Tilt</b> your phone (gravity steers the blue ball).</li>
-        <li>🌬️ <b>Blow gently</b> – the ball moves forward on its own!</li>
-        <li>🌀 <b>Shaking</b> makes the walls <b>widen</b> so you never get stuck.</li>
-        <li>✨ Reach the <b>green glow</b> to create your calming mandala.</li>
+        <li>📱 <b>Tilt</b> your phone (watch the top numbers change).</li>
+        <li>🌬️ <b>Blow gently</b> – watch the Blow% jump up!</li>
+        <li>🌀 <b>Shaking</b> makes the walls <b>widen</b>.</li>
+        <li>✨ Reach the <b>green glow</b> to create your mandala.</li>
       </ul>
       <button class="closeHelp">Got it, thanks</button>
     </div>
@@ -304,7 +200,7 @@
     const COLS = 9, ROWS = 9;
     let cellSize;
     let maze = [];
-    let wallThickness = 3; 
+    let wallThickness = 2.5; 
 
     function initMaze() {
       maze = [];
@@ -363,35 +259,34 @@
     }
 
     // --------------------------------------------------------------
-    // 4. SENSORS (PURE GRAVITY TILT - NO DEBUG DOT!)
+    // 4. SENSORS WITH DEBUG OUTPUT
     // --------------------------------------------------------------
-    let tiltX = 0; // -1 (left) to 1 (right)
-    let tiltY = 0; // -1 (up) to 1 (down)
+    let tiltX = 0, tiltY = 0;
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
     let audioCtx = null, analyser = null, dataArray = null;
 
-    // --- A. TILT & SHAKE (Using DeviceMotion Gravity) ---
+    // --- A. TILT & SHAKE ---
     function handleMotion(e) {
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
 
-      // 1. TILT: Raw gravity mapped to -1..1
       let rawX = acc.x / 9.8;
-      let rawY = -acc.y / 9.8; // Inverted so forward tilt = positive Y (down).
-
+      let rawY = -acc.y / 9.8; 
       rawX = Math.min(1, Math.max(-1, rawX));
       rawY = Math.min(1, Math.max(-1, rawY));
-
-      // EXTRA SENSITIVE: Deadzone lowered to 0.05 so it catches the smallest tilt
       if (Math.abs(rawX) < 0.05) rawX = 0;
       if (Math.abs(rawY) < 0.05) rawY = 0;
 
       tiltX = rawX;
       tiltY = rawY;
 
-      // 2. SHAKE: Variance of total acceleration
+      // UPDATE DEBUG DISPLAY
+      document.getElementById('debugTilt').textContent = tiltX.toFixed(2);
+      document.getElementById('debugTiltY').textContent = tiltY.toFixed(2);
+
+      // Shake
       const mag = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
       shakeHistory.push(mag);
       if (shakeHistory.length > 40) shakeHistory.shift();
@@ -421,7 +316,10 @@
     }
 
     function updateBlow() {
-      if (!analyser || !dataArray) { blowForce *= 0.9; return; }
+      if (!analyser || !dataArray) { 
+        blowForce *= 0.9; 
+        return; 
+      }
       try {
         analyser.getByteFrequencyData(dataArray);
         let sum = 0;
@@ -430,35 +328,36 @@
         const avg = sum / bins;
         if (avg > 15) blowForce = Math.min(1, (avg - 15) / 55);
         else blowForce *= 0.95;
+        
+        // UPDATE DEBUG DISPLAY
+        document.getElementById('debugBlow').textContent = Math.round(blowForce * 100);
       } catch(e) { blowForce *= 0.95; }
     }
 
     // --------------------------------------------------------------
-    // 5. GAME LOGIC (RESPONSIVE TILT)
+    // 5. GAME LOGIC (Now with manual override for testing)
     // --------------------------------------------------------------
     function updateGame() {
       if (gameWon) return;
 
       // Shake -> Thin walls
-      wallThickness = Math.max(1.5, 3 - shakeIntensity * 3);
+      wallThickness = Math.max(1.5, 2.5 - shakeIntensity * 2.5);
 
       let dr = 0, dc = 0;
-      // Lower threshold = More sensitive to tilt
       const threshold = 0.08; 
 
       // 1. Read Tilt
       if (Math.abs(tiltX) > threshold) dc = tiltX > 0 ? 1 : -1;
       if (Math.abs(tiltY) > threshold) dr = tiltY > 0 ? 1 : -1;
 
-      // 2. BLOW TO MOVE (Auto-pilot towards exit if no tilt)
+      // 2. BLOW TO MOVE
       const isBlowing = blowForce > 0.25;
       if (isBlowing && dc === 0 && dr === 0) {
         if (ball.row < ROWS - 1) dr = 1;
         else if (ball.col < COLS - 1) dc = 1;
       }
 
-      // Blowing makes movement faster (lower cooldown)
-      const moveDelay = isBlowing ? 3 : 7; 
+      const moveDelay = isBlowing ? 2 : 7; // Blowing makes it FAST
 
       if ((dc !== 0 || dr !== 0) && stepCooldown <= 0) {
         const newR = ball.row + dr, newC = ball.col + dc;
@@ -481,7 +380,7 @@
       }
       if (stepCooldown > 0) stepCooldown--;
 
-      // Smooth centering (ball snaps perfectly to the middle of the path)
+      // Smooth centering
       const target = getCellCenter(ball.col, ball.row);
       ball.px += (target.x - ball.px) * 0.25;
       ball.py += (target.y - ball.py) * 0.25;
@@ -490,23 +389,22 @@
 
       // Status updates
       const status = document.getElementById('statusMsg');
-      if (isBlowing && dc === 0 && dr === 0) status.innerText = '🌬️ blowing forward towards the light...';
-      else if (shakeIntensity > 0.4) status.innerText = '🌀 shaking · walls widening for you';
-      else if (Math.abs(tiltX) > 0.2 || Math.abs(tiltY) > 0.2) status.innerText = '📱 tilting to navigate';
-      else if (!isBlowing) status.innerText = '🌬️ blow gently to move · 📱 tilt to steer';
+      if (isBlowing && dc === 0 && dr === 0) status.innerText = '🌬️ blowing forward...';
+      else if (shakeIntensity > 0.4) status.innerText = '🌀 shaking · walls widening';
+      else if (Math.abs(tiltX) > 0.2 || Math.abs(tiltY) > 0.2) status.innerText = '📱 tilting';
+      else if (!isBlowing) status.innerText = '🌬️ blow to move · 📱 tilt to steer';
 
       updateBlow();
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (ONLY ONE BALL - THE BLUE ONE!)
+    // 6. DRAWING
     // --------------------------------------------------------------
     function draw() {
-      // Warm background
       ctx.fillStyle = '#fdf8f5';
       ctx.fillRect(0, 0, W, H);
 
-      // --- Draw Maze (Terracotta) ---
+      // Maze
       const margin = cellSize * 0.5;
       ctx.strokeStyle = '#b85a40';
       ctx.lineWidth = Math.max(1.5, wallThickness);
@@ -526,7 +424,7 @@
       }
       ctx.shadowBlur = 0;
 
-      // --- Path Trace (Warm coral) ---
+      // Path
       if (path.length > 1) {
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
@@ -539,7 +437,7 @@
         ctx.shadowBlur = 0;
       }
 
-      // --- Goal (Sage Green) ---
+      // Goal
       const goal = getCellCenter(COLS - 1, ROWS - 1);
       ctx.shadowBlur = 40;
       ctx.shadowColor = 'rgba(129, 178, 154, 0.4)';
@@ -553,14 +451,11 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // --- THE ONLY BALL (Ocean Blue, perfectly centered) ---
+      // Ball
       const radius = cellSize * 0.15 + shakeIntensity * 1;
       
-      // Soft aura
-      const glowGrad = ctx.createRadialGradient(
-        ball.px, ball.py, 0,
-        ball.px, ball.py, radius * 3
-      );
+      // Aura
+      const glowGrad = ctx.createRadialGradient(ball.px, ball.py, 0, ball.px, ball.py, radius * 3);
       glowGrad.addColorStop(0, 'rgba(42, 92, 122, 0.12)');
       glowGrad.addColorStop(1, 'rgba(42, 92, 122, 0)');
       ctx.shadowBlur = 0;
@@ -570,10 +465,7 @@
       ctx.fill();
 
       // Main ball
-      const ballGrad = ctx.createRadialGradient(
-        ball.px - radius*0.3, ball.py - radius*0.3, 2,
-        ball.px, ball.py, radius
-      );
+      const ballGrad = ctx.createRadialGradient(ball.px - radius*0.3, ball.py - radius*0.3, 2, ball.px, ball.py, radius);
       ballGrad.addColorStop(0, '#b4d9f0');
       ballGrad.addColorStop(0.5, '#2a5c7a');
       ballGrad.addColorStop(1, '#143545');
@@ -584,7 +476,7 @@
       ctx.fillStyle = ballGrad;
       ctx.fill();
 
-      // --- Breath Rings ---
+      // Breath Rings
       if (blowForce > 0.1) {
         ctx.shadowBlur = 0;
         for (let i = 0; i < 3; i++) {
@@ -682,26 +574,24 @@
       resetGame();
       gameLoop();
 
-      // Start Button -> Permissions
       document.getElementById('startBtn').addEventListener('click', async () => {
-        // 1. MOTION PERMISSION (Tilt & Shake)
+        // 1. Motion (Tilt & Shake)
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             const response = await DeviceMotionEvent.requestPermission();
             if (response === 'granted') {
               window.addEventListener('devicemotion', handleMotion);
             } else {
-              alert('Motion permission denied. Please allow motion sensors for tilt to work.');
+              alert('Motion permission denied. Tilt won\'t work.');
             }
-          } catch(e) { console.warn('Motion permission error:', e); }
+          } catch(e) { console.warn('Motion error:', e); }
         } else {
           window.addEventListener('devicemotion', handleMotion);
         }
 
-        // 2. MIC PERMISSION
+        // 2. Mic
         initAudio();
 
-        // Hide overlay & resume audio
         document.getElementById('overlay').classList.add('hidden');
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         document.getElementById('winCountDisplay').textContent = parseInt(localStorage.getItem('anchorWins') || '0');
@@ -720,7 +610,7 @@
         resetGame();
       });
 
-      // Desktop Keyboard Fallback
+      // Keyboard fallback (Desktop)
       document.addEventListener('keydown', (e) => {
         if (gameWon) return;
         let dc=0, dr=0;
@@ -731,6 +621,8 @@
         if (dc !== 0 || dr !== 0) {
           e.preventDefault();
           tiltX = dc; tiltY = dr;
+          document.getElementById('debugTilt').textContent = tiltX.toFixed(2);
+          document.getElementById('debugTiltY').textContent = tiltY.toFixed(2);
           setTimeout(() => { if (!gameWon) { tiltX = 0; tiltY = 0; } }, 150);
         }
       });
