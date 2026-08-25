@@ -155,16 +155,20 @@
     const ctx = canvas.getContext('2d');
     let W, H;
     function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      if (typeof computeLayout === 'function' && maze.length) {
-        computeLayout();
-        snapBallToCell(); // keep the ball centered in its cell after a resize
-      }
+      // Read the canvas's ACTUAL rendered size (clientWidth/clientHeight),
+      // not window.innerWidth/innerHeight. On mobile browsers, CSS 100vh can
+      // differ from window.innerHeight (address bar show/hide), which was
+      // silently stretching the canvas image and throwing off the ball's
+      // apparent position relative to the walls.
+      W = canvas.width = canvas.clientWidth;
+      H = canvas.height = canvas.clientHeight;
+      computeLayout();
+      if (maze.length) snapBallToCell(); // keep the ball centered in its cell after a resize
     }
     window.addEventListener('resize', resize);
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+    window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+    W = canvas.width = canvas.clientWidth;
+    H = canvas.height = canvas.clientHeight;
 
     const COLS = 9, ROWS = 9;
     let cellSize, maze = [], wallThickness = 2.5;
@@ -602,7 +606,7 @@
     }
 
     function init() {
-      computeLayout();
+      resize();
       resetGame();
       gameLoop();
 
