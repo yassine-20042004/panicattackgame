@@ -200,7 +200,9 @@
 
     function getCellCenter(col, row) {
       const margin = cellSize * 0.5;
-      return { x: margin + col * cellSize, y: margin + row * cellSize };
+      // The +cellSize/2 lands us in the middle of the cell instead of on
+      // its top-left corner (which is where the wall lines are drawn).
+      return { x: margin + col * cellSize + cellSize / 2, y: margin + row * cellSize + cellSize / 2 };
     }
     function snapBallToCell() {
       const pos = getCellCenter(ball.col, ball.row);
