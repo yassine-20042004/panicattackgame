@@ -253,6 +253,11 @@
     // 3. SENSORS
     // --------------------------------------------------------------
     let tiltX = 0, tiltY = 0;
+    let rawTiltX = 0, rawTiltY = 0; // last unsigned, uncalibrated readings (used during calibration)
+    // Some phones/browsers report gamma with the opposite sign than expected
+    // (right tilt reads as left, etc). Rather than guess, these are learned
+    // once via a short calibration step right after Start is pressed.
+    let tiltSignX = 1, tiltSignY = 1;
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
@@ -262,10 +267,12 @@
     function handleOrientation(e) {
       let gamma = e.gamma || 0;
       let beta = e.beta || 0;
-      let rawX = Math.min(1, Math.max(-1, gamma / 45));
-      let rawY = Math.min(1, Math.max(-1, (beta - 90) / 45));
-      tiltX = tiltX + (rawX - tiltX) * TILT_SMOOTHING;
-      tiltY = tiltY + (rawY - tiltY) * TILT_SMOOTHING;
+      rawTiltX = Math.min(1, Math.max(-1, gamma / 45));
+      rawTiltY = Math.min(1, Math.max(-1, (beta - 90) / 45));
+      const signedX = rawTiltX * tiltSignX;
+      const signedY = rawTiltY * tiltSignY;
+      tiltX = tiltX + (signedX - tiltX) * TILT_SMOOTHING;
+      tiltY = tiltY + (signedY - tiltY) * TILT_SMOOTHING;
     }
 
     function handleMotion(e) {
@@ -298,18 +305,53 @@
       } catch(e) { blowForce = 0; }
     }
 
+    let noiseFloor = 0; // calibrated ambient mic level, learned at startup
+
     function updateBlow() {
       if (!analyser || !dataArray) { blowForce *= 0.9; return; }
       try {
         analyser.getByteFrequencyData(dataArray);
         let sum = 0;
-        const bins = Math.min(40, dataArray.length);
+        // Breath/wind noise on a mic is dominated by LOW frequencies (turbulence),
+        // while voices and most background noise skew higher. Narrowing to the
+        // first few bins (roughly the lowest ~800Hz) makes this much less
+        // sensitive to nearby conversation, TV, etc. than averaging a wide band.
+        const bins = Math.min(12, dataArray.length);
         for (let i = 0; i < bins; i++) sum += dataArray[i];
         const avg = sum / bins;
-        if (avg > 15) blowForce = Math.min(1, (avg - 15) / 55);
+        // Threshold floats above whatever this room's ambient level actually is,
+        // instead of a single fixed number that works in some rooms and not others.
+        const effective = avg - noiseFloor;
+        if (effective > 15) blowForce = Math.min(1, (effective - 15) / 55);
         else blowForce *= 0.9;
         document.getElementById('debugBlow').textContent = Math.round(blowForce * 100);
       } catch(e) { blowForce *= 0.9; }
+    }
+
+    // Samples the mic for `ms` while the user stays quiet, returns the average
+    // low-band level so updateBlow() can subtract this room's ambient noise.
+    function measureNoiseFloor(ms) {
+      return new Promise(resolve => {
+        if (!analyser || !dataArray) { resolve(0); return; }
+        const samples = [];
+        const start = performance.now();
+        function sample() {
+          try {
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            const bins = Math.min(12, dataArray.length);
+            for (let i = 0; i < bins; i++) sum += dataArray[i];
+            samples.push(sum / bins);
+          } catch(e) {}
+          if (performance.now() - start < ms) {
+            requestAnimationFrame(sample);
+          } else {
+            const avg = samples.length ? samples.reduce((a,b)=>a+b,0) / samples.length : 0;
+            resolve(avg);
+          }
+        }
+        sample();
+      });
     }
 
     // --------------------------------------------------------------
@@ -605,6 +647,68 @@
       requestAnimationFrame(gameLoop);
     }
 
+    // --------------------------------------------------------------
+    // CALIBRATION (runs once, right after Start)
+    // --------------------------------------------------------------
+    // Waits for the user to clearly tilt on one axis, records which raw sign
+    // that produced, and returns +1 or -1 so future readings on that axis
+    // can be corrected to match what the user actually did physically.
+    function waitForTiltAndCaptureSign(axis, promptHTML, timeoutMs) {
+      return new Promise(resolve => {
+        const overlayEl = document.getElementById('overlay');
+        overlayEl.querySelector('.subtitle').innerHTML = promptHTML;
+        const start = performance.now();
+        function check() {
+          const raw = axis === 'x' ? rawTiltX : rawTiltY;
+          if (Math.abs(raw) > 0.35) {
+            resolve(Math.sign(raw));
+            return;
+          }
+          if (performance.now() - start > timeoutMs) {
+            resolve(1); // no sensor / no clear tilt detected - default, harmless
+            return;
+          }
+          requestAnimationFrame(check);
+        }
+        check();
+      });
+    }
+
+    async function runCalibration() {
+      const overlayEl = document.getElementById('overlay');
+      const featureGrid = overlayEl.querySelector('.feature-grid');
+      const startBtnEl = document.getElementById('startBtn');
+      const h1 = overlayEl.querySelector('h1');
+      featureGrid.style.display = 'none';
+      startBtnEl.style.display = 'none';
+      h1.innerHTML = '📱 Quick calibration';
+
+      const hasOrientation = typeof DeviceOrientationEvent !== 'undefined';
+      if (hasOrientation) {
+        const signX = await waitForTiltAndCaptureSign('x', 'Tilt your phone to the <b>RIGHT</b>, then back to center', 4000);
+        // Whatever raw sign we observed while the user physically tilted right
+        // becomes our reference for "right" from now on, correcting for any
+        // device/browser that reports gamma with the opposite sign.
+        tiltSignX = signX >= 0 ? 1 : -1;
+
+        overlayEl.querySelector('.subtitle').innerHTML = 'Now tilt your phone <b>FORWARD/DOWN</b>, then back to center';
+        const signY = await waitForTiltAndCaptureSign('y', 'Tilt your phone <b>FORWARD/DOWN</b>, then back to center', 4000);
+        tiltSignY = signY >= 0 ? 1 : -1;
+      }
+
+      if (analyser && dataArray) {
+        overlayEl.querySelector('.subtitle').innerHTML = 'Stay quiet for a second while we calibrate the mic...';
+        noiseFloor = await measureNoiseFloor(1000);
+      }
+
+      overlayEl.querySelector('.subtitle').innerHTML = 'All set!';
+      await new Promise(r => setTimeout(r, 400));
+
+      h1.innerHTML = '🧘 <span>Panic</span> Attack Support';
+      featureGrid.style.display = '';
+      startBtnEl.style.display = '';
+    }
+
     function init() {
       resize();
       resetGame();
@@ -628,6 +732,12 @@
           window.addEventListener('devicemotion', handleMotion);
         }
         initAudio();
+
+        // Give the mic a moment to actually connect before calibrating against it
+        await new Promise(r => setTimeout(r, 300));
+
+        await runCalibration();
+
         document.getElementById('overlay').classList.add('hidden');
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         document.getElementById('winCountDisplay').textContent = parseInt(localStorage.getItem('anchorWins') || '0');
