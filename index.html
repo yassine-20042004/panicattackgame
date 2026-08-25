@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Panic Attack Support – Anchor Labyrinth</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-touch-callout: none; }
@@ -24,31 +24,30 @@
       background: #fdf8f5;
       touch-action: none;
     }
-    /* Sensor Debug (Top center) */
+    /* Sensor Debug */
     #sensorDebug {
       position: fixed;
       top: 12px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 60;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255,255,255,0.85);
       backdrop-filter: blur(6px);
-      padding: 4px 16px;
+      padding: 4px 14px;
       border-radius: 30px;
       border: 1px solid #e0d6ce;
       color: #2a5c7a;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 600;
-      font-family: 'Courier New', monospace;
+      font-family: monospace;
       white-space: nowrap;
       box-shadow: 0 2px 10px rgba(0,0,0,0.04);
       pointer-events: none;
-      letter-spacing: 0.02em;
     }
     #sensorDebug span { color: #b85a40; margin: 0 2px; }
-    @media (max-width: 480px) { #sensorDebug { font-size: 0.55rem; padding: 3px 10px; } }
+    @media (max-width: 480px) { #sensorDebug { font-size: 0.5rem; padding: 3px 10px; } }
     
-    /* ---- START OVERLAY ---- */
+    /* Overlay */
     #overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(253, 248, 245, 0.94); backdrop-filter: blur(14px);
@@ -57,32 +56,30 @@
       transition: opacity 0.6s ease;
     }
     #overlay.hidden { opacity: 0; pointer-events: none; }
-    #overlay h1 { font-size: 2.6rem; font-weight: 700; color: #2a5c7a; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+    #overlay h1 { font-size: 2.4rem; font-weight: 700; color: #2a5c7a; }
     #overlay h1 span { color: #b85a40; }
-    #overlay .subtitle { font-size: 1rem; color: #5e7c7e; max-width: 300px; line-height: 1.5; margin-bottom: 0.5rem; }
+    #overlay .subtitle { font-size: 1rem; color: #5e7c7e; max-width: 300px; line-height: 1.5; margin: 0.5rem 0; }
     #overlay .feature-grid {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1rem;
-      margin: 1.5rem 0 2.5rem; font-size: 0.85rem; color: #3d5a5c;
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1rem;
+      margin: 1.2rem 0 2rem; font-size: 0.8rem; color: #3d5a5c;
     }
     #overlay .feature-grid span {
       background: rgba(184, 90, 64, 0.08); padding: 0.2rem 1rem;
       border-radius: 30px; border: 1px solid rgba(184, 90, 64, 0.12);
     }
     #startBtn {
-      background: #2a5c7a; border: none; color: white; padding: 1rem 3.5rem;
-      font-size: 1.2rem; border-radius: 60px; font-weight: 600;
+      background: #2a5c7a; border: none; color: white; padding: 0.9rem 3rem;
+      font-size: 1.1rem; border-radius: 60px; font-weight: 600;
       box-shadow: 0 8px 25px rgba(42, 92, 122, 0.25);
       cursor: pointer; touch-action: manipulation; transition: transform 0.15s;
     }
     #startBtn:active { transform: scale(0.94); }
-    /* ---- HELP ---- */
     #helpBtn {
       position: fixed; top: 20px; left: 20px; z-index: 50;
       background: rgba(255,255,255,0.8); backdrop-filter: blur(6px);
       border: 1px solid #d6cbc4; color: #2a5c7a;
-      width: 42px; height: 42px; border-radius: 50%;
-      font-size: 1.3rem; font-weight: 300; cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      width: 40px; height: 40px; border-radius: 50%;
+      font-size: 1.2rem; font-weight: 300; cursor: pointer;
     }
     #helpBtn:active { transform: scale(0.9); }
     #helpModal {
@@ -102,21 +99,23 @@
     #helpModal ul li { padding: 0.4rem 0; border-bottom: 1px solid rgba(0,0,0,0.04); color: #2d3e40; display: flex; align-items: center; gap: 0.6rem; }
     #helpModal ul li:last-child { border: none; }
     #helpModal .closeHelp { background: #b85a40; border: none; color: white; padding: 0.6rem 2rem; border-radius: 40px; font-weight: 600; cursor: pointer; font-size: 1rem; }
-    /* ---- UI BOTTOM ---- */
     #statusMsg {
       position: fixed; bottom: 0; left: 0; width: 100%; text-align: center;
       color: #4a686a; font-size: 0.85rem; letter-spacing: 0.04em; pointer-events: none;
       z-index: 10; font-weight: 500;
-      background: rgba(253, 248, 245, 0.85); backdrop-filter: blur(4px);
+      background: rgba(253, 248, 245, 0.9); backdrop-filter: blur(4px);
       padding: 10px 0; border-top: 1px solid rgba(184, 90, 64, 0.12);
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     #winCounter {
       position: fixed; top: 20px; right: 20px;
       background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
       padding: 4px 14px; border-radius: 30px; border: 1px solid #e8ddd6;
-      color: #2a5c7a; font-size: 0.75rem; z-index: 10; font-weight: 600;
+      color: #2a5c7a; font-size: 0.7rem; z-index: 10; font-weight: 600;
     }
-    /* ---- MANDALA ---- */
     #mandalaOverlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(253, 248, 245, 0.95); backdrop-filter: blur(8px);
@@ -129,18 +128,16 @@
     #mandalaOverlay p { color: #5e7c7e; margin: 0.2rem 0 1.2rem; }
     #resetBtn { background: #b85a40; border: none; color: white; padding: 0.6rem 2.5rem; border-radius: 40px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgba(184, 90, 64, 0.25); transition: 0.15s; }
     #resetBtn:active { transform: scale(0.95); }
-    @media (max-width: 480px) { #overlay h1 { font-size: 2.2rem; } #overlay .feature-grid { gap: 0.3rem; font-size: 0.75rem; } }
+    @media (max-width: 480px) { #overlay h1 { font-size: 2rem; } }
   </style>
 </head>
 <body>
 
-  <!-- SENSOR DEBUG (Shows live tilt values) -->
   <div id="sensorDebug">📐 Tilt: <span id="debugX">0.00</span> , <span id="debugY">0.00</span> | 🌬️ <span id="debugBlow">0</span>%</div>
 
-  <!-- OVERLAY -->
   <div id="overlay">
     <h1>🧘 <span>Panic</span> Attack Support</h1>
-    <div class="subtitle">Tilt your phone. Blow gently. The labyrinth listens.</div>
+    <div class="subtitle">Tilt your phone · Blow gently · The labyrinth listens</div>
     <div class="feature-grid">
       <span>📱 Tilt to steer</span>
       <span>🌬️ Blow to move</span>
@@ -149,27 +146,24 @@
     <button id="startBtn">begin your anchor</button>
   </div>
 
-  <!-- HELP -->
   <button id="helpBtn">❓</button>
   <div id="helpModal">
     <div class="card">
       <h2>⚓ How it works</h2>
       <ul>
-        <li>📱 <b>Tilt</b> left/right/forward/back (watch the top numbers).</li>
-        <li>🌬️ <b>Blow gently</b> – the ball moves forward automatically!</li>
-        <li>🌀 <b>Shaking</b> makes the corridors wider.</li>
+        <li>📱 <b>Tilt</b> left/right/forward/back – watch the top numbers.</li>
+        <li>🌬️ <b>Blow gently</b> – the ball moves forward automatically.</li>
+        <li>🌀 <b>Shake</b> – the corridors become wider.</li>
         <li>✨ Reach the <b>green glow</b> to create your mandala.</li>
       </ul>
       <button class="closeHelp">Got it</button>
     </div>
   </div>
 
-  <!-- GAME -->
   <canvas id="gameCanvas"></canvas>
   <div id="winCounter">🏆 <span id="winCountDisplay">0</span></div>
   <div id="statusMsg">🌬️ blow to move · 📱 tilt to steer</div>
 
-  <!-- MANDALA -->
   <div id="mandalaOverlay">
     <canvas id="mandalaCanvas"></canvas>
     <h2>✦ your anchor mandala ✦</h2>
@@ -179,7 +173,7 @@
 
   <script>
     // --------------------------------------------------------------
-    // 1. SETUP
+    // 1. CANVAS & MAZE
     // --------------------------------------------------------------
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -188,9 +182,6 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // --------------------------------------------------------------
-    // 2. MAZE (Perfect 9x9)
-    // --------------------------------------------------------------
     const COLS = 9, ROWS = 9;
     let cellSize, maze = [], wallThickness = 2.5;
 
@@ -226,59 +217,55 @@
     }
 
     // --------------------------------------------------------------
-    // 3. BALL
+    // 2. BALL (INSTANT SNAP)
     // --------------------------------------------------------------
     let ball = { row: 0, col: 0, px: 0, py: 0 };
-    let path = [], gameWon = false, stepCooldown = 0;
+    let path = [], gameWon = false;
 
     function getCellCenter(col, row) {
       const margin = cellSize * 0.5;
       return { x: margin + col * cellSize, y: margin + row * cellSize };
     }
 
+    function snapBallToCell() {
+      const pos = getCellCenter(ball.col, ball.row);
+      ball.px = pos.x;
+      ball.py = pos.y;
+    }
+
     function resetGame() {
       initMaze();
       ball.row = 0; ball.col = 0;
-      const start = getCellCenter(0, 0);
-      ball.px = start.x; ball.py = start.y;
+      snapBallToCell();
       path = [{ x: ball.px, y: ball.py }];
-      gameWon = false; stepCooldown = 0;
+      gameWon = false;
       document.getElementById('mandalaOverlay').classList.remove('show');
-      document.getElementById('statusMsg').innerText = '🌬️ blow to move · 📱 tilt to steer';
+      document.getElementById('statusMsg').innerHTML = '🌬️ blow to move · 📱 tilt to steer';
     }
 
     // --------------------------------------------------------------
-    // 4. SENSORS (FIXED: deviceorientation for TILT + devicemotion for SHAKE)
+    // 3. SENSORS
     // --------------------------------------------------------------
-    let tiltX = 0, tiltY = 0; // -1..1
+    let tiltX = 0, tiltY = 0;
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
     let audioCtx = null, analyser = null, dataArray = null;
 
-    // A. TILT (Absolute orientation – works flat or upright!)
     function handleOrientation(e) {
-      let gamma = e.gamma || 0; // -90 to 90 (left/right)
-      let beta = e.beta || 0;   // -180 to 180 (forward/back)
-
-      // Map gamma (-90..90) to -1..1 (45° = max speed)
+      let gamma = e.gamma || 0;
+      let beta = e.beta || 0;
       let rawX = Math.min(1, Math.max(-1, gamma / 45));
-      // Beta: 90 is flat/horizontal. Tilt forward = beta decreases, backward = increases.
       let rawY = Math.min(1, Math.max(-1, (beta - 90) / 45));
-
-      // Deadzone (prevents jitter)
-      if (Math.abs(rawX) < 0.06) rawX = 0;
-      if (Math.abs(rawY) < 0.06) rawY = 0;
-
+      // ULTRA SENSITIVE threshold (0.03)
+      if (Math.abs(rawX) < 0.03) rawX = 0;
+      if (Math.abs(rawY) < 0.03) rawY = 0;
       tiltX = rawX;
       tiltY = rawY;
-
-      // Update debug display
       document.getElementById('debugX').textContent = tiltX.toFixed(2);
       document.getElementById('debugY').textContent = tiltY.toFixed(2);
     }
 
-    // B. SHAKE (Using gravity spikes)
     function handleMotion(e) {
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
@@ -292,7 +279,6 @@
       }
     }
 
-    // C. MIC (Blow)
     function initAudio() {
       if (audioCtx) return;
       try {
@@ -325,81 +311,91 @@
     }
 
     // --------------------------------------------------------------
-    // 5. GAME LOGIC (AXIS LOCKED!)
+    // 4. MOVEMENT ENGINE (ULTRA RESPONSIVE)
     // --------------------------------------------------------------
+    function moveBall(dr, dc) {
+      if (gameWon) return false;
+      const newR = ball.row + dr, newC = ball.col + dc;
+      if (newR < 0 || newR >= ROWS || newC < 0 || newC >= COLS) return false;
+      
+      let blocked = false;
+      if (dr === -1 && maze[ball.row][ball.col].top) blocked = true;
+      if (dr === 1 && maze[ball.row][ball.col].bottom) blocked = true;
+      if (dc === -1 && maze[ball.row][ball.col].left) blocked = true;
+      if (dc === 1 && maze[ball.row][ball.col].right) blocked = true;
+      if (blocked) return false;
+
+      ball.row = newR;
+      ball.col = newC;
+      snapBallToCell();
+      path.push({ x: ball.px, y: ball.py });
+      
+      if (ball.row === ROWS - 1 && ball.col === COLS - 1) {
+        winGame();
+      }
+      return true;
+    }
+
+    // --------------------------------------------------------------
+    // 5. GAME UPDATE
+    // --------------------------------------------------------------
+    let moveCooldown = 0;
+
     function updateGame() {
       if (gameWon) return;
 
-      // Shake makes walls thinner (wider corridors)
+      // Shake -> wider corridors
       wallThickness = Math.max(1.5, 2.5 - shakeIntensity * 2);
 
       let dr = 0, dc = 0;
-      const threshold = 0.06;
+      const threshold = 0.03; // Very sensitive!
+      const absX = Math.abs(tiltX);
+      const absY = Math.abs(tiltY);
 
-      // --- AXIS LOCK: Choose the STRONGEST tilt direction ---
-      let absX = Math.abs(tiltX);
-      let absY = Math.abs(tiltY);
-
+      // Axis lock: choose strongest tilt direction
       if (absX > threshold || absY > threshold) {
-        if (absX > absY) {
-          // Horizontal dominant
+        if (absX >= absY) {
           dc = tiltX > 0 ? 1 : -1;
         } else {
-          // Vertical dominant
           dr = tiltY > 0 ? 1 : -1;
         }
       }
 
-      // --- BLOW TO MOVE (Auto-pilot) ---
+      // If blowing and no tilt, auto-pilot towards exit
       const isBlowing = blowForce > 0.25;
       if (isBlowing && dc === 0 && dr === 0) {
         if (ball.row < ROWS - 1) dr = 1;
         else if (ball.col < COLS - 1) dc = 1;
       }
 
-      // Move speed: Blowing makes it faster
-      const moveDelay = isBlowing ? 2 : 6;
-
-      if ((dc !== 0 || dr !== 0) && stepCooldown <= 0) {
-        const newR = ball.row + dr, newC = ball.col + dc;
-        if (newR >= 0 && newR < ROWS && newC >= 0 && newC < COLS) {
-          let blocked = false;
-          if (dr === -1 && maze[ball.row][ball.col].top) blocked = true;
-          if (dr === 1 && maze[ball.row][ball.col].bottom) blocked = true;
-          if (dc === -1 && maze[ball.row][ball.col].left) blocked = true;
-          if (dc === 1 && maze[ball.row][ball.col].right) blocked = true;
-          if (!blocked) {
-            ball.row = newR; ball.col = newC;
-            const center = getCellCenter(ball.col, ball.row);
-            path.push({ x: center.x, y: center.y });
-            stepCooldown = moveDelay;
-            if (ball.row === ROWS - 1 && ball.col === COLS - 1) winGame();
-          } else if (isBlowing) {
-            document.getElementById('statusMsg').innerText = '🚧 wall ahead · tilt to turn';
-          }
-        }
+      // Attempt move (frame-based, no cooldown to be super responsive)
+      let moved = false;
+      let directionText = '';
+      if (dc !== 0 || dr !== 0) {
+        moved = moveBall(dr, dc);
+        if (dc === 1) directionText = '➡️ Right';
+        else if (dc === -1) directionText = '⬅️ Left';
+        else if (dr === 1) directionText = '⬇️ Down';
+        else if (dr === -1) directionText = '⬆️ Up';
       }
-      if (stepCooldown > 0) stepCooldown--;
 
-      // --- SNAP TO CENTER (Perfectly aligned) ---
-      const target = getCellCenter(ball.col, ball.row);
-      ball.px += (target.x - ball.px) * 0.3;
-      ball.py += (target.y - ball.py) * 0.3;
-      if (Math.abs(ball.px - target.x) < 0.3) ball.px = target.x;
-      if (Math.abs(ball.py - target.y) < 0.3) ball.py = target.y;
-
-      // Status updates
+      // Update status bar with live feedback
       const status = document.getElementById('statusMsg');
-      if (isBlowing && dc === 0 && dr === 0) status.innerText = '🌬️ breathing forward...';
-      else if (shakeIntensity > 0.4) status.innerText = '🌀 shaking · corridors widening';
-      else if (absX > 0.15 || absY > 0.15) status.innerText = '📱 tilting';
-      else if (!isBlowing) status.innerText = '🌬️ blow to move · 📱 tilt to steer';
+      if (moved) {
+        status.innerHTML = `📍 Moved ${directionText}`;
+      } else if (dc !== 0 || dr !== 0) {
+        status.innerHTML = `🚧 Blocked ${directionText} – try another way`;
+      } else if (isBlowing) {
+        status.innerHTML = '🌬️ Breathing forward...';
+      } else {
+        status.innerHTML = '🌬️ blow to move · 📱 tilt to steer';
+      }
 
       updateBlow();
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (Tiny Ball, Perfectly Centered)
+    // 6. DRAWING (PURE 2D FLAT SHAPE)
     // --------------------------------------------------------------
     function draw() {
       ctx.fillStyle = '#fdf8f5';
@@ -412,7 +408,6 @@
       ctx.shadowColor = 'rgba(184, 90, 64, 0.08)';
       ctx.shadowBlur = 4;
       ctx.lineCap = 'round';
-
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
           const x = margin + c * cellSize, y = margin + r * cellSize;
@@ -425,7 +420,7 @@
       }
       ctx.shadowBlur = 0;
 
-      // Path
+      // Path trace
       if (path.length > 1) {
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
@@ -438,7 +433,7 @@
         ctx.shadowBlur = 0;
       }
 
-      // Goal
+      // Goal (Green Glow)
       const goal = getCellCenter(COLS - 1, ROWS - 1);
       ctx.shadowBlur = 35;
       ctx.shadowColor = 'rgba(129, 178, 154, 0.4)';
@@ -452,44 +447,43 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // --- BALL (TINY, PERFECTLY CENTERED) ---
-      const radius = Math.max(4, cellSize * 0.09) + shakeIntensity * 0.5;
+      // ---------- PURE 2D FLAT TOKEN (PERFECTLY CENTERED) ----------
+      const radius = Math.max(6, cellSize * 0.16) + shakeIntensity * 0.5;
+      const cx = ball.px, cy = ball.py;
+
+      // Outer soft glow (flat circle with shadow)
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = 'rgba(42, 92, 122, 0.3)';
       
-      // Aura
-      const glow = ctx.createRadialGradient(ball.px, ball.py, 0, ball.px, ball.py, radius * 4);
-      glow.addColorStop(0, 'rgba(42, 92, 122, 0.10)');
-      glow.addColorStop(1, 'rgba(42, 92, 122, 0)');
+      // Main flat disc (Ocean Blue)
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#2a5c7a';
+      ctx.fill();
+      
+      // Crisp white border (makes it pop against the wall)
       ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Inner bright dot (shows the exact center)
       ctx.beginPath();
-      ctx.arc(ball.px, ball.py, radius * 4, 0, Math.PI * 2);
-      ctx.fillStyle = glow;
+      ctx.arc(cx, cy, radius * 0.25, 0, Math.PI * 2);
+      ctx.fillStyle = '#b4d9f0';
       ctx.fill();
 
-      // Solid ball
-      const grad = ctx.createRadialGradient(ball.px - radius*0.3, ball.py - radius*0.3, 1, ball.px, ball.py, radius);
-      grad.addColorStop(0, '#c5e3f7');
-      grad.addColorStop(0.5, '#2a5c7a');
-      grad.addColorStop(1, '#0f2a3a');
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(42, 92, 122, 0.5)';
-      ctx.beginPath();
-      ctx.arc(ball.px, ball.py, radius, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Breath rings
+      // Breath rings (flat 2D circles)
       if (blowForce > 0.1) {
-        ctx.shadowBlur = 0;
         for (let i = 0; i < 3; i++) {
           const r = radius + 6 + i * 5 + blowForce * 10;
           ctx.beginPath();
-          ctx.arc(ball.px, ball.py, r, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(129, 178, 154, ${blowForce * 0.25})`;
-          ctx.lineWidth = 1.5;
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(129, 178, 154, ${blowForce * 0.3})`;
+          ctx.lineWidth = 2;
           ctx.stroke();
         }
       }
-      ctx.shadowBlur = 0;
     }
 
     // --------------------------------------------------------------
@@ -561,10 +555,10 @@
     }
 
     // --------------------------------------------------------------
-    // 8. INIT
+    // 8. LOOP & INIT
     // --------------------------------------------------------------
     function gameLoop() {
-      if (!gameWon) updateGame();
+      updateGame();
       draw();
       requestAnimationFrame(gameLoop);
     }
@@ -576,41 +570,32 @@
       gameLoop();
 
       document.getElementById('startBtn').addEventListener('click', async () => {
-        // TILT PERMISSION (DeviceOrientation)
+        // Tilt
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
             const response = await DeviceOrientationEvent.requestPermission();
-            if (response === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation);
-            } else {
-              alert('Tilt permission denied. Please allow motion sensors.');
-            }
-          } catch(e) { console.warn('Orientation error'); }
+            if (response === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+          } catch(e) {}
         } else {
           window.addEventListener('deviceorientation', handleOrientation);
         }
-
-        // SHAKE PERMISSION (DeviceMotion)
+        // Shake
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             const response = await DeviceMotionEvent.requestPermission();
-            if (response === 'granted') {
-              window.addEventListener('devicemotion', handleMotion);
-            }
-          } catch(e) { console.warn('Motion error'); }
+            if (response === 'granted') window.addEventListener('devicemotion', handleMotion);
+          } catch(e) {}
         } else {
           window.addEventListener('devicemotion', handleMotion);
         }
-
-        // MIC
+        // Mic
         initAudio();
-
         document.getElementById('overlay').classList.add('hidden');
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         document.getElementById('winCountDisplay').textContent = parseInt(localStorage.getItem('anchorWins') || '0');
       });
 
-      // Help Modal
+      // Help modal
       document.getElementById('helpBtn').addEventListener('click', () => document.getElementById('helpModal').classList.add('show'));
       document.querySelector('.closeHelp').addEventListener('click', () => document.getElementById('helpModal').classList.remove('show'));
       document.getElementById('helpModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('show'); });
@@ -620,21 +605,29 @@
         resetGame();
       });
 
-      // Desktop Keyboard Fallback
+      // TAP TO FORCE MOVE RIGHT (Debug helper)
+      canvas.addEventListener('click', (e) => {
+        if (!gameWon) {
+          const moved = moveBall(0, 1);
+          if (moved) document.getElementById('statusMsg').innerHTML = '📍 Tapped: Moved Right';
+          else document.getElementById('statusMsg').innerHTML = '🚧 Tapped: Wall Right';
+        }
+      });
+
+      // Keyboard (Desktop)
       document.addEventListener('keydown', (e) => {
         if (gameWon) return;
-        let dc = 0, dr = 0;
+        let dr = 0, dc = 0;
         if (e.key === 'ArrowRight') dc = 1;
-        if (e.key === 'ArrowLeft') dc = -1;
-        if (e.key === 'ArrowDown') dr = 1;
-        if (e.key === 'ArrowUp') dr = -1;
-        if (dc !== 0 || dr !== 0) {
-          e.preventDefault();
-          tiltX = dc; tiltY = dr;
-          document.getElementById('debugX').textContent = tiltX.toFixed(2);
-          document.getElementById('debugY').textContent = tiltY.toFixed(2);
-          setTimeout(() => { if (!gameWon) { tiltX = 0; tiltY = 0; } }, 150);
-        }
+        else if (e.key === 'ArrowLeft') dc = -1;
+        else if (e.key === 'ArrowDown') dr = 1;
+        else if (e.key === 'ArrowUp') dr = -1;
+        else return;
+        e.preventDefault();
+        const moved = moveBall(dr, dc);
+        const dir = dc === 1 ? 'Right' : dc === -1 ? 'Left' : dr === 1 ? 'Down' : 'Up';
+        if (moved) document.getElementById('statusMsg').innerHTML = `⌨️ Moved ${dir}`;
+        else document.getElementById('statusMsg').innerHTML = `🚧 Blocked ${dir}`;
       });
     }
 
