@@ -24,7 +24,6 @@
       background: #fdf8f5;
       touch-action: none;
     }
-    /* Sensor Debug */
     #sensorDebug {
       position: fixed;
       top: 12px;
@@ -46,8 +45,7 @@
     }
     #sensorDebug span { color: #b85a40; margin: 0 2px; }
     @media (max-width: 480px) { #sensorDebug { font-size: 0.5rem; padding: 3px 10px; } }
-    
-    /* Overlay */
+
     #overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(253, 248, 245, 0.94); backdrop-filter: blur(14px);
@@ -203,7 +201,7 @@
         if (r < ROWS-1 && !maze[r+1][c].visited) neighbors.push({ r: r+1, c, dir: 'bottom' });
         if (c > 0 && !maze[r][c-1].visited) neighbors.push({ r, c: c-1, dir: 'left' });
         if (c < COLS-1 && !maze[r][c+1].visited) neighbors.push({ r, c: c+1, dir: 'right' });
-        if (neighbors.length === 0) { stack.pop(); } 
+        if (neighbors.length === 0) { stack.pop(); }
         else {
           const next = neighbors[Math.floor(Math.random() * neighbors.length)];
           if (next.dir === 'top') { maze[r][c].top = false; maze[next.r][next.c].bottom = false; }
@@ -239,6 +237,7 @@
       snapBallToCell();
       path = [{ x: ball.px, y: ball.py }];
       gameWon = false;
+      lastMoveTime = 0;
       document.getElementById('mandalaOverlay').classList.remove('show');
       document.getElementById('statusMsg').innerHTML = '🌬️ blow to move · 📱 tilt to steer';
     }
@@ -246,22 +245,27 @@
     // --------------------------------------------------------------
     // 3. SENSORS
     // --------------------------------------------------------------
-    let tiltX = 0, tiltY = 0;
+    let tiltX = 0, tiltY = 0;          // smoothed values used by the game
+    let rawTiltX = 0, rawTiltY = 0;    // last raw sensor reading
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
     let audioCtx = null, analyser = null, dataArray = null;
 
+    // How strongly to smooth the tilt signal. Lower = smoother/slower to react,
+    // higher = snappier but more jittery. 0.15 filters out hand tremor nicely.
+    const TILT_SMOOTHING = 0.15;
+
     function handleOrientation(e) {
       let gamma = e.gamma || 0;
       let beta = e.beta || 0;
-      let rawX = Math.min(1, Math.max(-1, gamma / 45));
-      let rawY = Math.min(1, Math.max(-1, (beta - 90) / 45));
-      // ULTRA SENSITIVE threshold (0.03)
-      if (Math.abs(rawX) < 0.03) rawX = 0;
-      if (Math.abs(rawY) < 0.03) rawY = 0;
-      tiltX = rawX;
-      tiltY = rawY;
+      rawTiltX = Math.min(1, Math.max(-1, gamma / 45));
+      rawTiltY = Math.min(1, Math.max(-1, (beta - 90) / 45));
+
+      // Exponential moving average smooths out sensor noise / natural hand shake
+      tiltX = tiltX + (rawTiltX - tiltX) * TILT_SMOOTHING;
+      tiltY = tiltY + (rawTiltY - tiltY) * TILT_SMOOTHING;
+
       document.getElementById('debugX').textContent = tiltX.toFixed(2);
       document.getElementById('debugY').textContent = tiltY.toFixed(2);
     }
@@ -311,13 +315,13 @@
     }
 
     // --------------------------------------------------------------
-    // 4. MOVEMENT ENGINE (ULTRA RESPONSIVE)
+    // 4. MOVEMENT ENGINE (PACED, NOT PER-FRAME)
     // --------------------------------------------------------------
     function moveBall(dr, dc) {
       if (gameWon) return false;
       const newR = ball.row + dr, newC = ball.col + dc;
       if (newR < 0 || newR >= ROWS || newC < 0 || newC >= COLS) return false;
-      
+
       let blocked = false;
       if (dr === -1 && maze[ball.row][ball.col].top) blocked = true;
       if (dr === 1 && maze[ball.row][ball.col].bottom) blocked = true;
@@ -329,7 +333,7 @@
       ball.col = newC;
       snapBallToCell();
       path.push({ x: ball.px, y: ball.py });
-      
+
       if (ball.row === ROWS - 1 && ball.col === COLS - 1) {
         winGame();
       }
@@ -339,7 +343,17 @@
     // --------------------------------------------------------------
     // 5. GAME UPDATE
     // --------------------------------------------------------------
-    let moveCooldown = 0;
+    // Minimum time between automatic moves. This is the key fix: without a
+    // cooldown, a sustained tilt was triggering a move on every animation
+    // frame (~60/sec), which made the ball fly through the whole maze
+    // instantly and jitter on any hand tremor. 260ms gives a calm, readable
+    // pace that fits the breathing/relaxation theme.
+    const MOVE_COOLDOWN_MS = 260;
+    let lastMoveTime = 0;
+
+    // Tilt must exceed this to register as an intentional move (raised from
+    // 0.03, which was well within normal hand-tremor range on a real phone).
+    const TILT_THRESHOLD = 0.18;
 
     function updateGame() {
       if (gameWon) return;
@@ -347,13 +361,14 @@
       // Shake -> wider corridors
       wallThickness = Math.max(1.5, 2.5 - shakeIntensity * 2);
 
+      const now = performance.now();
+      const canMove = (now - lastMoveTime) >= MOVE_COOLDOWN_MS;
+
       let dr = 0, dc = 0;
-      const threshold = 0.03; // Very sensitive!
       const absX = Math.abs(tiltX);
       const absY = Math.abs(tiltY);
 
-      // Axis lock: choose strongest tilt direction
-      if (absX > threshold || absY > threshold) {
+      if (absX > TILT_THRESHOLD || absY > TILT_THRESHOLD) {
         if (absX >= absY) {
           dc = tiltX > 0 ? 1 : -1;
         } else {
@@ -368,21 +383,22 @@
         else if (ball.col < COLS - 1) dc = 1;
       }
 
-      // Attempt move (frame-based, no cooldown to be super responsive)
       let moved = false;
       let directionText = '';
-      if (dc !== 0 || dr !== 0) {
+      if ((dc !== 0 || dr !== 0) && canMove) {
         moved = moveBall(dr, dc);
+        if (moved) lastMoveTime = now;
         if (dc === 1) directionText = '➡️ Right';
         else if (dc === -1) directionText = '⬅️ Left';
         else if (dr === 1) directionText = '⬇️ Down';
         else if (dr === -1) directionText = '⬆️ Up';
       }
 
-      // Update status bar with live feedback
       const status = document.getElementById('statusMsg');
       if (moved) {
         status.innerHTML = `📍 Moved ${directionText}`;
+      } else if ((dc !== 0 || dr !== 0) && !canMove) {
+        status.innerHTML = `⏳ Hold steady...`;
       } else if (dc !== 0 || dr !== 0) {
         status.innerHTML = `🚧 Blocked ${directionText} – try another way`;
       } else if (isBlowing) {
@@ -401,7 +417,6 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fillRect(0, 0, W, H);
 
-      // Maze
       const margin = cellSize * 0.5;
       ctx.strokeStyle = '#b85a40';
       ctx.lineWidth = Math.max(1.5, wallThickness);
@@ -420,7 +435,6 @@
       }
       ctx.shadowBlur = 0;
 
-      // Path trace
       if (path.length > 1) {
         ctx.beginPath();
         ctx.moveTo(path[0].x, path[0].y);
@@ -433,7 +447,6 @@
         ctx.shadowBlur = 0;
       }
 
-      // Goal (Green Glow)
       const goal = getCellCenter(COLS - 1, ROWS - 1);
       ctx.shadowBlur = 35;
       ctx.shadowColor = 'rgba(129, 178, 154, 0.4)';
@@ -447,33 +460,27 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fill();
 
-      // ---------- PURE 2D FLAT TOKEN (PERFECTLY CENTERED) ----------
       const radius = Math.max(6, cellSize * 0.16) + shakeIntensity * 0.5;
       const cx = ball.px, cy = ball.py;
 
-      // Outer soft glow (flat circle with shadow)
       ctx.shadowBlur = 25;
       ctx.shadowColor = 'rgba(42, 92, 122, 0.3)';
-      
-      // Main flat disc (Ocean Blue)
+
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fillStyle = '#2a5c7a';
       ctx.fill();
-      
-      // Crisp white border (makes it pop against the wall)
+
       ctx.shadowBlur = 0;
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Inner bright dot (shows the exact center)
       ctx.beginPath();
       ctx.arc(cx, cy, radius * 0.25, 0, Math.PI * 2);
       ctx.fillStyle = '#b4d9f0';
       ctx.fill();
 
-      // Breath rings (flat 2D circles)
       if (blowForce > 0.1) {
         for (let i = 0; i < 3; i++) {
           const r = radius + 6 + i * 5 + blowForce * 10;
@@ -570,7 +577,6 @@
       gameLoop();
 
       document.getElementById('startBtn').addEventListener('click', async () => {
-        // Tilt
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
             const response = await DeviceOrientationEvent.requestPermission();
@@ -579,7 +585,6 @@
         } else {
           window.addEventListener('deviceorientation', handleOrientation);
         }
-        // Shake
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             const response = await DeviceMotionEvent.requestPermission();
@@ -588,14 +593,12 @@
         } else {
           window.addEventListener('devicemotion', handleMotion);
         }
-        // Mic
         initAudio();
         document.getElementById('overlay').classList.add('hidden');
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         document.getElementById('winCountDisplay').textContent = parseInt(localStorage.getItem('anchorWins') || '0');
       });
 
-      // Help modal
       document.getElementById('helpBtn').addEventListener('click', () => document.getElementById('helpModal').classList.add('show'));
       document.querySelector('.closeHelp').addEventListener('click', () => document.getElementById('helpModal').classList.remove('show'));
       document.getElementById('helpModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('show'); });
@@ -605,7 +608,6 @@
         resetGame();
       });
 
-      // TAP TO FORCE MOVE RIGHT (Debug helper)
       canvas.addEventListener('click', (e) => {
         if (!gameWon) {
           const moved = moveBall(0, 1);
@@ -614,7 +616,6 @@
         }
       });
 
-      // Keyboard (Desktop)
       document.addEventListener('keydown', (e) => {
         if (gameWon) return;
         let dr = 0, dc = 0;
