@@ -154,12 +154,34 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let W, H;
-    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      if (typeof computeLayout === 'function' && maze.length) {
+        computeLayout();
+        snapBallToCell(); // keep the ball centered in its cell after a resize
+      }
+    }
     window.addEventListener('resize', resize);
-    resize();
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
 
     const COLS = 9, ROWS = 9;
     let cellSize, maze = [], wallThickness = 2.5;
+    // Single source of truth for the grid's position on screen. Every wall,
+    // every cell, and the ball all derive from this same origin, so the ball
+    // is guaranteed to land in the center of its cell, never on a wall line.
+    let offsetX = 0, offsetY = 0;
+
+    function computeLayout() {
+      const padding = 40; // breathing room around the maze
+      const available = Math.min(W, H) - padding * 2;
+      cellSize = available / Math.max(ROWS, COLS);
+      const gridW = cellSize * COLS;
+      const gridH = cellSize * ROWS;
+      offsetX = (W - gridW) / 2;
+      offsetY = (H - gridH) / 2;
+    }
 
     function initMaze() {
       maze = [];
@@ -199,10 +221,10 @@
     let path = [], gameWon = false;
 
     function getCellCenter(col, row) {
-      const margin = cellSize * 0.5;
-      // The +cellSize/2 lands us in the middle of the cell instead of on
-      // its top-left corner (which is where the wall lines are drawn).
-      return { x: margin + col * cellSize + cellSize / 2, y: margin + row * cellSize + cellSize / 2 };
+      return {
+        x: offsetX + col * cellSize + cellSize / 2,
+        y: offsetY + row * cellSize + cellSize / 2
+      };
     }
     function snapBallToCell() {
       const pos = getCellCenter(ball.col, ball.row);
@@ -420,7 +442,6 @@
       ctx.fillStyle = '#fdf8f5';
       ctx.fillRect(0, 0, W, H);
 
-      const margin = cellSize * 0.5;
       ctx.strokeStyle = '#b85a40';
       ctx.lineWidth = Math.max(1.5, wallThickness);
       ctx.shadowColor = 'rgba(184, 90, 64, 0.08)';
@@ -428,7 +449,7 @@
       ctx.lineCap = 'round';
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
-          const x = margin + c * cellSize, y = margin + r * cellSize;
+          const x = offsetX + c * cellSize, y = offsetY + r * cellSize;
           const cell = maze[r][c];
           if (cell.top) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); ctx.stroke(); }
           if (cell.right) { ctx.beginPath(); ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); ctx.stroke(); }
@@ -581,8 +602,7 @@
     }
 
     function init() {
-      resize();
-      cellSize = Math.min(W, H) / (Math.max(ROWS, COLS) + 1.6);
+      computeLayout();
       resetGame();
       gameLoop();
 
