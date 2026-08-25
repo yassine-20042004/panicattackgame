@@ -8,62 +8,37 @@
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-touch-callout: none; }
     body {
       background: #fdf8f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
-      touch-action: none;
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; width: 100vw; overflow: hidden; touch-action: none;
       font-family: 'Segoe UI', system-ui, sans-serif;
     }
-    #gameCanvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-      background: #fdf8f5;
-      touch-action: none;
-    }
+    #gameCanvas { display: block; width: 100vw; height: 100vh; background: #fdf8f5; touch-action: none; }
     #sensorDebug {
-      position: fixed;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 60;
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(6px);
-      padding: 4px 14px;
-      border-radius: 30px;
-      border: 1px solid #e0d6ce;
-      color: #2a5c7a;
-      font-size: 0.6rem;
-      font-weight: 600;
-      font-family: monospace;
-      white-space: nowrap;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-      pointer-events: none;
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 60;
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+      padding: 4px 14px; border-radius: 30px; border: 1px solid #e0d6ce;
+      color: #2a5c7a; font-size: 0.6rem; font-weight: 600; font-family: monospace;
+      white-space: nowrap; box-shadow: 0 2px 10px rgba(0,0,0,0.04); pointer-events: none;
     }
     #sensorDebug span { color: #b85a40; margin: 0 2px; }
     @media (max-width: 480px) { #sensorDebug { font-size: 0.5rem; padding: 3px 10px; } }
-
     #overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(253, 248, 245, 0.94); backdrop-filter: blur(14px);
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      z-index: 100; padding: 2rem; text-align: center;
-      transition: opacity 0.6s ease;
+      z-index: 100; padding: 2rem; text-align: center; transition: opacity 0.6s ease;
     }
     #overlay.hidden { opacity: 0; pointer-events: none; }
     #overlay h1 { font-size: 2.4rem; font-weight: 700; color: #2a5c7a; }
     #overlay h1 span { color: #b85a40; }
-    #overlay .subtitle { font-size: 1rem; color: #5e7c7e; max-width: 300px; line-height: 1.5; margin: 0.5rem 0; }
+    #overlay .subtitle { font-size: 1rem; color: #5e7c7e; max-width: 320px; line-height: 1.5; margin: 0.5rem 0; }
     #overlay .feature-grid {
       display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1rem;
       margin: 1.2rem 0 2rem; font-size: 0.8rem; color: #3d5a5c;
     }
     #overlay .feature-grid span {
-      background: rgba(184, 90, 64, 0.08); padding: 0.2rem 1rem;
-      border-radius: 30px; border: 1px solid rgba(184, 90, 64, 0.12);
+      background: rgba(184, 90, 64, 0.08); padding: 0.2rem 1rem; border-radius: 30px;
+      border: 1px solid rgba(184, 90, 64, 0.12);
     }
     #startBtn {
       background: #2a5c7a; border: none; color: white; padding: 0.9rem 3rem;
@@ -76,8 +51,7 @@
       position: fixed; top: 20px; left: 20px; z-index: 50;
       background: rgba(255,255,255,0.8); backdrop-filter: blur(6px);
       border: 1px solid #d6cbc4; color: #2a5c7a;
-      width: 40px; height: 40px; border-radius: 50%;
-      font-size: 1.2rem; font-weight: 300; cursor: pointer;
+      width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; font-weight: 300; cursor: pointer;
     }
     #helpBtn:active { transform: scale(0.9); }
     #helpModal {
@@ -88,8 +62,7 @@
     #helpModal.show { display: flex; }
     #helpModal .card {
       background: #fdf8f5; max-width: 380px; padding: 2rem 1.8rem;
-      border-radius: 36px; box-shadow: 0 30px 60px rgba(0,0,0,0.15);
-      animation: popIn 0.2s ease;
+      border-radius: 36px; box-shadow: 0 30px 60px rgba(0,0,0,0.15); animation: popIn 0.2s ease;
     }
     @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     #helpModal h2 { color: #2a5c7a; font-weight: 600; margin-bottom: 0.2rem; }
@@ -100,14 +73,16 @@
     #statusMsg {
       position: fixed; bottom: 0; left: 0; width: 100%; text-align: center;
       color: #4a686a; font-size: 0.85rem; letter-spacing: 0.04em; pointer-events: none;
-      z-index: 10; font-weight: 500;
-      background: rgba(253, 248, 245, 0.9); backdrop-filter: blur(4px);
+      z-index: 10; font-weight: 500; background: rgba(253, 248, 245, 0.9); backdrop-filter: blur(4px);
       padding: 10px 0; border-top: 1px solid rgba(184, 90, 64, 0.12);
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      min-height: 44px; display: flex; align-items: center; justify-content: center;
     }
+    #breathBar {
+      position: fixed; bottom: 44px; left: 50%; transform: translateX(-50%);
+      width: 60vw; max-width: 260px; height: 6px; border-radius: 6px;
+      background: rgba(184, 90, 64, 0.1); overflow: hidden; z-index: 10;
+    }
+    #breathBarFill { height: 100%; width: 0%; background: #81b29a; border-radius: 6px; transition: width 0.05s linear; }
     #winCounter {
       position: fixed; top: 20px; right: 20px;
       background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
@@ -131,14 +106,14 @@
 </head>
 <body>
 
-  <div id="sensorDebug">📐 Tilt: <span id="debugX">0.00</span> , <span id="debugY">0.00</span> | 🌬️ <span id="debugBlow">0</span>%</div>
+  <div id="sensorDebug">📐 Aim: <span id="debugX">–</span> | 🌬️ <span id="debugBlow">0</span>%</div>
 
   <div id="overlay">
     <h1>🧘 <span>Panic</span> Attack Support</h1>
-    <div class="subtitle">Tilt your phone · Blow gently · The labyrinth listens</div>
+    <div class="subtitle">Tilt to aim a direction, then take one full slow breath out to step forward.</div>
     <div class="feature-grid">
-      <span>📱 Tilt to steer</span>
-      <span>🌬️ Blow to move</span>
+      <span>📱 Tilt to aim</span>
+      <span>🌬️ Exhale fully to move</span>
       <span>🌀 Shake widens walls</span>
     </div>
     <button id="startBtn">begin your anchor</button>
@@ -149,9 +124,11 @@
     <div class="card">
       <h2>⚓ How it works</h2>
       <ul>
-        <li>📱 <b>Tilt</b> left/right/forward/back – watch the top numbers.</li>
-        <li>🌬️ <b>Blow gently</b> – the ball moves forward automatically.</li>
-        <li>🌀 <b>Shake</b> – the corridors become wider.</li>
+        <li>📱 <b>Tilt</b> and hold to aim a direction (up/down/left/right).</li>
+        <li>🌬️ <b>Breathe out slowly and fully</b> into the mic — the green bar fills as you exhale.</li>
+        <li>✅ When the bar fills, the ball takes one step in your aimed direction.</li>
+        <li>😮‍💨 Relax and let the breath go fully before your next one — that's what resets you for the next step.</li>
+        <li>🌀 <b>Shake</b> the phone — the corridors become wider.</li>
         <li>✨ Reach the <b>green glow</b> to create your mandala.</li>
       </ul>
       <button class="closeHelp">Got it</button>
@@ -160,7 +137,8 @@
 
   <canvas id="gameCanvas"></canvas>
   <div id="winCounter">🏆 <span id="winCountDisplay">0</span></div>
-  <div id="statusMsg">🌬️ blow to move · 📱 tilt to steer</div>
+  <div id="breathBar"><div id="breathBarFill"></div></div>
+  <div id="statusMsg">📱 tilt to aim a direction</div>
 
   <div id="mandalaOverlay">
     <canvas id="mandalaCanvas"></canvas>
@@ -215,7 +193,7 @@
     }
 
     // --------------------------------------------------------------
-    // 2. BALL (INSTANT SNAP)
+    // 2. BALL
     // --------------------------------------------------------------
     let ball = { row: 0, col: 0, px: 0, py: 0 };
     let path = [], gameWon = false;
@@ -224,11 +202,9 @@
       const margin = cellSize * 0.5;
       return { x: margin + col * cellSize, y: margin + row * cellSize };
     }
-
     function snapBallToCell() {
       const pos = getCellCenter(ball.col, ball.row);
-      ball.px = pos.x;
-      ball.py = pos.y;
+      ball.px = pos.x; ball.py = pos.y;
     }
 
     function resetGame() {
@@ -237,37 +213,31 @@
       snapBallToCell();
       path = [{ x: ball.px, y: ball.py }];
       gameWon = false;
-      lastMoveTime = 0;
+      aimDir = null;
+      blowState = 'idle';
+      blowHoldStart = 0;
       document.getElementById('mandalaOverlay').classList.remove('show');
-      document.getElementById('statusMsg').innerHTML = '🌬️ blow to move · 📱 tilt to steer';
+      document.getElementById('statusMsg').innerHTML = '📱 tilt to aim a direction';
+      document.getElementById('breathBarFill').style.width = '0%';
     }
 
     // --------------------------------------------------------------
     // 3. SENSORS
     // --------------------------------------------------------------
-    let tiltX = 0, tiltY = 0;          // smoothed values used by the game
-    let rawTiltX = 0, rawTiltY = 0;    // last raw sensor reading
+    let tiltX = 0, tiltY = 0;
     let shakeIntensity = 0;
     const shakeHistory = [];
     let blowForce = 0;
     let audioCtx = null, analyser = null, dataArray = null;
-
-    // How strongly to smooth the tilt signal. Lower = smoother/slower to react,
-    // higher = snappier but more jittery. 0.15 filters out hand tremor nicely.
     const TILT_SMOOTHING = 0.15;
 
     function handleOrientation(e) {
       let gamma = e.gamma || 0;
       let beta = e.beta || 0;
-      rawTiltX = Math.min(1, Math.max(-1, gamma / 45));
-      rawTiltY = Math.min(1, Math.max(-1, (beta - 90) / 45));
-
-      // Exponential moving average smooths out sensor noise / natural hand shake
-      tiltX = tiltX + (rawTiltX - tiltX) * TILT_SMOOTHING;
-      tiltY = tiltY + (rawTiltY - tiltY) * TILT_SMOOTHING;
-
-      document.getElementById('debugX').textContent = tiltX.toFixed(2);
-      document.getElementById('debugY').textContent = tiltY.toFixed(2);
+      let rawX = Math.min(1, Math.max(-1, gamma / 45));
+      let rawY = Math.min(1, Math.max(-1, (beta - 90) / 45));
+      tiltX = tiltX + (rawX - tiltX) * TILT_SMOOTHING;
+      tiltY = tiltY + (rawY - tiltY) * TILT_SMOOTHING;
     }
 
     function handleMotion(e) {
@@ -309,109 +279,140 @@
         for (let i = 0; i < bins; i++) sum += dataArray[i];
         const avg = sum / bins;
         if (avg > 15) blowForce = Math.min(1, (avg - 15) / 55);
-        else blowForce *= 0.95;
+        else blowForce *= 0.9;
         document.getElementById('debugBlow').textContent = Math.round(blowForce * 100);
-      } catch(e) { blowForce *= 0.95; }
+      } catch(e) { blowForce *= 0.9; }
     }
 
     // --------------------------------------------------------------
-    // 4. MOVEMENT ENGINE (PACED, NOT PER-FRAME)
+    // 4. AIM (tilt, with hysteresis so small corrections don't flip it)
+    // --------------------------------------------------------------
+    let aimDir = null; // { dr, dc, label }
+    const AIM_ENGAGE = 0.30;   // tilt magnitude needed to LOCK a new direction
+    const AIM_RELEASE = 0.14;  // tilt must fall below this before aim clears
+
+    function updateAim() {
+      const absX = Math.abs(tiltX), absY = Math.abs(tiltY);
+
+      if (aimDir) {
+        // How strong is the tilt on the axis we're currently aiming?
+        const currentMag = aimDir.dc !== 0 ? absX : absY;
+        if (currentMag > AIM_RELEASE) {
+          // still holding the same aim - ignore the other axis unless it's
+          // clearly dominant, so a small correction can't hijack the aim
+          return;
+        }
+        aimDir = null; // released back to neutral
+      }
+
+      // Neutral: only lock a new direction on a clear, deliberate tilt
+      if (absX > AIM_ENGAGE || absY > AIM_ENGAGE) {
+        if (absX >= absY) {
+          aimDir = tiltX > 0 ? { dr: 0, dc: 1, label: 'Right ➡️' } : { dr: 0, dc: -1, label: '⬅️ Left' };
+        } else {
+          aimDir = tiltY > 0 ? { dr: 1, dc: 0, label: 'Down ⬇️' } : { dr: -1, dc: 0, label: '⬆️ Up' };
+        }
+      }
+    }
+
+    // --------------------------------------------------------------
+    // 5. MOVEMENT
     // --------------------------------------------------------------
     function moveBall(dr, dc) {
       if (gameWon) return false;
       const newR = ball.row + dr, newC = ball.col + dc;
       if (newR < 0 || newR >= ROWS || newC < 0 || newC >= COLS) return false;
-
       let blocked = false;
       if (dr === -1 && maze[ball.row][ball.col].top) blocked = true;
       if (dr === 1 && maze[ball.row][ball.col].bottom) blocked = true;
       if (dc === -1 && maze[ball.row][ball.col].left) blocked = true;
       if (dc === 1 && maze[ball.row][ball.col].right) blocked = true;
       if (blocked) return false;
-
-      ball.row = newR;
-      ball.col = newC;
+      ball.row = newR; ball.col = newC;
       snapBallToCell();
       path.push({ x: ball.px, y: ball.py });
-
-      if (ball.row === ROWS - 1 && ball.col === COLS - 1) {
-        winGame();
-      }
+      if (ball.row === ROWS - 1 && ball.col === COLS - 1) winGame();
       return true;
     }
 
     // --------------------------------------------------------------
-    // 5. GAME UPDATE
+    // 6. BREATH STATE MACHINE (this is now the only thing that moves the ball)
     // --------------------------------------------------------------
-    // Minimum time between automatic moves. This is the key fix: without a
-    // cooldown, a sustained tilt was triggering a move on every animation
-    // frame (~60/sec), which made the ball fly through the whole maze
-    // instantly and jitter on any hand tremor. 260ms gives a calm, readable
-    // pace that fits the breathing/relaxation theme.
-    const MOVE_COOLDOWN_MS = 260;
-    let lastMoveTime = 0;
+    // idle          -> waiting for a breath to start
+    // holding       -> currently exhaling, filling the breath bar
+    // cooldownWait  -> just moved, waiting for the person to fully relax
+    //                  (stop blowing) before the next breath can count
+    let blowState = 'idle';
+    let blowHoldStart = 0;
 
-    // Tilt must exceed this to register as an intentional move (raised from
-    // 0.03, which was well within normal hand-tremor range on a real phone).
-    const TILT_THRESHOLD = 0.18;
+    const BLOW_TRIGGER = 0.32;      // blow level that counts as "starting to exhale"
+    const BLOW_DROP_CANCEL = 0.20;  // if it dips below this mid-hold, the breath didn't complete
+    const BLOW_MIN_HOLD_MS = 450;   // must sustain the exhale this long = one full, slow breath
+    const BLOW_RESET = 0.15;        // must fall back below this to "relax" before next breath
 
-    function updateGame() {
-      if (gameWon) return;
+    function updateBreath(now) {
+      const fill = document.getElementById('breathBarFill');
+      const status = document.getElementById('statusMsg');
 
-      // Shake -> wider corridors
-      wallThickness = Math.max(1.5, 2.5 - shakeIntensity * 2);
-
-      const now = performance.now();
-      const canMove = (now - lastMoveTime) >= MOVE_COOLDOWN_MS;
-
-      let dr = 0, dc = 0;
-      const absX = Math.abs(tiltX);
-      const absY = Math.abs(tiltY);
-
-      if (absX > TILT_THRESHOLD || absY > TILT_THRESHOLD) {
-        if (absX >= absY) {
-          dc = tiltX > 0 ? 1 : -1;
+      if (blowState === 'idle') {
+        if (blowForce > BLOW_TRIGGER) {
+          blowState = 'holding';
+          blowHoldStart = now;
         } else {
-          dr = tiltY > 0 ? 1 : -1;
+          fill.style.width = '0%';
+          status.innerHTML = aimDir
+            ? `🎯 Aiming ${aimDir.label} — breathe out slowly to step`
+            : '📱 tilt to aim a direction';
         }
       }
 
-      // If blowing and no tilt, auto-pilot towards exit
-      const isBlowing = blowForce > 0.25;
-      if (isBlowing && dc === 0 && dr === 0) {
-        if (ball.row < ROWS - 1) dr = 1;
-        else if (ball.col < COLS - 1) dc = 1;
+      if (blowState === 'holding') {
+        if (blowForce < BLOW_DROP_CANCEL) {
+          // exhale broke off too early - doesn't count, try again
+          blowState = 'idle';
+          fill.style.width = '0%';
+          status.innerHTML = '😮‍💨 Breath released early — try a slower, steadier exhale';
+        } else {
+          const progress = Math.min(1, (now - blowHoldStart) / BLOW_MIN_HOLD_MS);
+          fill.style.width = (progress * 100) + '%';
+          status.innerHTML = '🌬️ Keep exhaling gently...';
+          if (progress >= 1) {
+            const dir = aimDir || { dr: 1, dc: 0, label: 'Down ⬇️' };
+            const moved = moveBall(dir.dr, dir.dc);
+            blowState = 'cooldownWait';
+            status.innerHTML = moved
+              ? `✅ Step taken. Let the breath go fully...`
+              : `🚧 Wall that way — let the breath go and try another direction`;
+          }
+        }
       }
 
-      let moved = false;
-      let directionText = '';
-      if ((dc !== 0 || dr !== 0) && canMove) {
-        moved = moveBall(dr, dc);
-        if (moved) lastMoveTime = now;
-        if (dc === 1) directionText = '➡️ Right';
-        else if (dc === -1) directionText = '⬅️ Left';
-        else if (dr === 1) directionText = '⬇️ Down';
-        else if (dr === -1) directionText = '⬆️ Up';
+      if (blowState === 'cooldownWait') {
+        fill.style.width = '100%';
+        if (blowForce < BLOW_RESET) {
+          blowState = 'idle';
+          fill.style.width = '0%';
+        }
       }
-
-      const status = document.getElementById('statusMsg');
-      if (moved) {
-        status.innerHTML = `📍 Moved ${directionText}`;
-      } else if ((dc !== 0 || dr !== 0) && !canMove) {
-        status.innerHTML = `⏳ Hold steady...`;
-      } else if (dc !== 0 || dr !== 0) {
-        status.innerHTML = `🚧 Blocked ${directionText} – try another way`;
-      } else if (isBlowing) {
-        status.innerHTML = '🌬️ Breathing forward...';
-      } else {
-        status.innerHTML = '🌬️ blow to move · 📱 tilt to steer';
-      }
-
-      updateBlow();
     }
 
     // --------------------------------------------------------------
-    // 6. DRAWING (PURE 2D FLAT SHAPE)
+    // 7. GAME UPDATE
+    // --------------------------------------------------------------
+    function updateGame() {
+      if (gameWon) return;
+      wallThickness = Math.max(1.5, 2.5 - shakeIntensity * 2);
+      updateBlow();
+      updateAim();
+      const now = performance.now();
+      updateBreath(now);
+
+      const debugX = document.getElementById('debugX');
+      debugX.textContent = aimDir ? aimDir.label : '–';
+    }
+
+    // --------------------------------------------------------------
+    // 8. DRAWING
     // --------------------------------------------------------------
     function draw() {
       ctx.fillStyle = '#fdf8f5';
@@ -463,38 +464,45 @@
       const radius = Math.max(6, cellSize * 0.16) + shakeIntensity * 0.5;
       const cx = ball.px, cy = ball.py;
 
+      // Breath progress ring while holding an exhale
+      if (blowState === 'holding') {
+        const progress = Math.min(1, (performance.now() - blowHoldStart) / BLOW_MIN_HOLD_MS);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius + 12, -Math.PI/2, -Math.PI/2 + progress * Math.PI * 2);
+        ctx.strokeStyle = '#81b29a';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      // Aim direction indicator
+      if (aimDir) {
+        const ax = cx + aimDir.dc * (radius + 20);
+        const ay = cy + aimDir.dr * (radius + 20);
+        ctx.beginPath();
+        ctx.arc(ax, ay, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#b85a40';
+        ctx.fill();
+      }
+
       ctx.shadowBlur = 25;
       ctx.shadowColor = 'rgba(42, 92, 122, 0.3)';
-
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fillStyle = '#2a5c7a';
       ctx.fill();
-
       ctx.shadowBlur = 0;
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 3;
       ctx.stroke();
-
       ctx.beginPath();
       ctx.arc(cx, cy, radius * 0.25, 0, Math.PI * 2);
       ctx.fillStyle = '#b4d9f0';
       ctx.fill();
-
-      if (blowForce > 0.1) {
-        for (let i = 0; i < 3; i++) {
-          const r = radius + 6 + i * 5 + blowForce * 10;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(129, 178, 154, ${blowForce * 0.3})`;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-      }
     }
 
     // --------------------------------------------------------------
-    // 7. WIN & MANDALA
+    // 9. WIN & MANDALA
     // --------------------------------------------------------------
     function winGame() {
       if (gameWon) return;
@@ -562,7 +570,7 @@
     }
 
     // --------------------------------------------------------------
-    // 8. LOOP & INIT
+    // 10. LOOP & INIT
     // --------------------------------------------------------------
     function gameLoop() {
       updateGame();
@@ -608,27 +616,20 @@
         resetGame();
       });
 
-      canvas.addEventListener('click', (e) => {
-        if (!gameWon) {
-          const moved = moveBall(0, 1);
-          if (moved) document.getElementById('statusMsg').innerHTML = '📍 Tapped: Moved Right';
-          else document.getElementById('statusMsg').innerHTML = '🚧 Tapped: Wall Right';
-        }
-      });
-
+      // Desktop fallback: keyboard sets the aim directly (no sensors needed to test)
       document.addEventListener('keydown', (e) => {
         if (gameWon) return;
-        let dr = 0, dc = 0;
-        if (e.key === 'ArrowRight') dc = 1;
-        else if (e.key === 'ArrowLeft') dc = -1;
-        else if (e.key === 'ArrowDown') dr = 1;
-        else if (e.key === 'ArrowUp') dr = -1;
-        else return;
-        e.preventDefault();
-        const moved = moveBall(dr, dc);
-        const dir = dc === 1 ? 'Right' : dc === -1 ? 'Left' : dr === 1 ? 'Down' : 'Up';
-        if (moved) document.getElementById('statusMsg').innerHTML = `⌨️ Moved ${dir}`;
-        else document.getElementById('statusMsg').innerHTML = `🚧 Blocked ${dir}`;
+        if (e.key === 'ArrowRight') aimDir = { dr: 0, dc: 1, label: 'Right ➡️' };
+        else if (e.key === 'ArrowLeft') aimDir = { dr: 0, dc: -1, label: '⬅️ Left' };
+        else if (e.key === 'ArrowDown') aimDir = { dr: 1, dc: 0, label: 'Down ⬇️' };
+        else if (e.key === 'ArrowUp') aimDir = { dr: -1, dc: 0, label: '⬆️ Up' };
+        else if (e.key === ' ') {
+          // spacebar simulates a blow, for testing on desktop without a mic gesture
+          blowForce = 1;
+        }
+      });
+      document.addEventListener('keyup', (e) => {
+        if (e.key === ' ') blowForce = 0;
       });
     }
 
